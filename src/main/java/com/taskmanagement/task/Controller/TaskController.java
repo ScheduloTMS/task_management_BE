@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("api/tasks")
 @CrossOrigin(origins = "*")
 public class TaskController {
 
