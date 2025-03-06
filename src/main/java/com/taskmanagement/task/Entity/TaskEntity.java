@@ -33,7 +33,8 @@ public class TaskEntity {
 
     public TaskEntity() {}
 
-    public TaskEntity(String title, String description, LocalDate dueDate, byte[] file) {
+    public TaskEntity(String title, String description, LocalDate dueDate, byte[] file)
+    {
         this.title = title;
         this.description = description;
         this.createdAt = LocalDate.now();
