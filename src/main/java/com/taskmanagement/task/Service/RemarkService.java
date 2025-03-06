@@ -21,7 +21,7 @@ public class RemarkService {
         this.taskRepository = taskRepository;
     }
 
-    // Fetch remarks for a task and return as DTOs
+
     public List<RemarkDTO> getAllRemarksForTask(UUID taskId) {
         List<RemarkEntity> remarks = remarkRepository.findByTask_TaskIdAndDeletedAtIsNull(taskId);
         return remarks.stream()
@@ -35,7 +35,7 @@ public class RemarkService {
                 .collect(Collectors.toList());
     }
 
-    // Add a new remark
+
     public RemarkDTO addRemark(UUID taskId, String userId, String comment) {
         TaskEntity task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -52,7 +52,7 @@ public class RemarkService {
                 savedRemark.getDeletedAt());
     }
 
-    // Soft delete a remark
+
     public void deleteRemark(UUID remarkId, String userId) {
         RemarkEntity remark = remarkRepository.findByRemarkIdAndDeletedAtIsNull(remarkId)
                 .orElseThrow(() -> new RuntimeException("Remark not found or already deleted"));

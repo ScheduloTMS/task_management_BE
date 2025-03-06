@@ -11,7 +11,7 @@ public class RemarkDTO {
     private final LocalDateTime createdAt;
     private final LocalDateTime deletedAt;
 
-    // Constructor
+
     public RemarkDTO(UUID remarkId, UUID taskId, String userId, String comment, LocalDateTime createdAt, LocalDateTime deletedAt) {
         this.remarkId = remarkId;
         this.taskId = taskId;
@@ -21,7 +21,7 @@ public class RemarkDTO {
         this.deletedAt = deletedAt;
     }
 
-    // Getters
+
     public UUID getRemarkId() {
         return remarkId;
     }

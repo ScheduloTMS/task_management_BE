@@ -37,7 +37,7 @@ public class RemarkEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    // Constructors
+
     public RemarkEntity() {}
 
     public RemarkEntity(TaskEntity task, String userId, String comment) { // Updated constructor
@@ -47,7 +47,7 @@ public class RemarkEntity {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters
+
     public UUID getRemarkId() {
         return remarkId;
     }

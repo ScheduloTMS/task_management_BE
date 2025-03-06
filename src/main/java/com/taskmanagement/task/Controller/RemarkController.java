@@ -17,7 +17,7 @@ public class RemarkController {
         this.remarkService = remarkService;
     }
 
-    // Get all remarks for a specific task
+
     @GetMapping("tasks/{task_id}/remarks")
     public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) {
         List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
@@ -30,7 +30,7 @@ public class RemarkController {
         return ResponseEntity.ok(response);
     }
 
-    // Add a new remark
+
     @PostMapping("tasks/{task_id}/remarks")
     public ResponseEntity<Map<String, Object>> addRemark(@PathVariable("task_id") UUID taskId,
                                                          @RequestBody Map<String, String> requestBody) {
@@ -47,7 +47,7 @@ public class RemarkController {
         return ResponseEntity.status(201).body(response);
     }
 
-    // Soft delete a remark
+
     @DeleteMapping("/remarks/{remark_id}")
     public ResponseEntity<Map<String, Object>> deleteRemark(@PathVariable("remark_id") UUID remarkId,
                                                             @RequestParam("user_id") String userId) {
