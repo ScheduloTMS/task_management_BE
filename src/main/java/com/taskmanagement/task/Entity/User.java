@@ -1,30 +1,29 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
 public class User {
 
     @Id
+    @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
 
+    @Column(nullable = false)
     private String name;
 
     @Column(unique = true)
     private String email;
 
     private String password;
-
-    @Lob
-    private byte[] photo;
-
-    private String role;
+    private String photo;
 
     @Column(name = "deleted_at")
-    private Date deletedAt;
+    private LocalDateTime deletedAt;
 
+    public User() {}
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -38,12 +37,9 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public byte[] getPhoto() { return photo; }
-    public void setPhoto(byte[] photo) { this.photo = photo; }
+    public String getPhoto() { return photo; }
+    public void setPhoto(String photo) { this.photo = photo; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public Date getDeletedAt() { return deletedAt; }
-    public void setDeletedAt(Date deletedAt) { this.deletedAt = deletedAt; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

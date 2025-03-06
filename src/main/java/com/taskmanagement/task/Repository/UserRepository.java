@@ -1,4 +1,4 @@
 package com.taskmanagement.task.Repository;
 
-public interface UserRepository {
+public class UserRepository {
 }
