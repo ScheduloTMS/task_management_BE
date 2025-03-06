@@ -1,0 +1,48 @@
+package com.taskmanagement.task.DTO;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public class RemarkDTO {
+    private final UUID remarkId;
+    private final UUID taskId;
+    private final String userId; // Kept as String
+    private final String comment;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime deletedAt;
+
+
+    public RemarkDTO(UUID remarkId, UUID taskId, String userId, String comment, LocalDateTime createdAt, LocalDateTime deletedAt) {
+        this.remarkId = remarkId;
+        this.taskId = taskId;
+        this.userId = userId;
+        this.comment = comment;
+        this.createdAt = createdAt;
+        this.deletedAt = deletedAt;
+    }
+
+
+    public UUID getRemarkId() {
+        return remarkId;
+    }
+
+    public UUID getTaskId() {
+        return taskId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+}
