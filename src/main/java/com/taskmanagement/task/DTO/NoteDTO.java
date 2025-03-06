@@ -1,11 +1,12 @@
 package com.taskmanagement.task.DTO;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import com.taskmanagement.task.Entity.Note;
 
 public class NoteDTO {
     
-    private Long noteId;
+    private UUID noteId;  // Change Long to UUID
     private String noteText;
     private LocalDateTime createdAt;
 
@@ -17,8 +18,8 @@ public class NoteDTO {
     }
 
     // Getters and Setters
-    public Long getNoteId() { return noteId; }
-    public void setNoteId(Long noteId) { this.noteId = noteId; }
+    public UUID getNoteId() { return noteId; }  // Change Long to UUID
+    public void setNoteId(UUID noteId) { this.noteId = noteId; }  // Change Long to UUID
 
     public String getNoteText() { return noteText; }
     public void setNoteText(String noteText) { this.noteText = noteText; }

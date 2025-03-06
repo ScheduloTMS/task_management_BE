@@ -1,4 +1,5 @@
 package com.taskmanagement.task.Controller;
+
 import com.taskmanagement.task.Service.NoteService;
 import com.taskmanagement.task.DTO.NoteDTO;
 import com.taskmanagement.task.Entity.Note;
@@ -7,12 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/notes")
-public class NoteController 
-{
+public class NoteController {
 
     @Autowired
     private NoteService noteService;
@@ -28,7 +28,7 @@ public class NoteController
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteNote(@PathVariable UUID id) { // Use UUID instead of Long
         noteService.deleteNote(id);
         return ResponseEntity.noContent().build();
     }
