@@ -1,6 +1,7 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -21,9 +22,12 @@ public class RemarkEntity {
     @JoinColumn(name = "task_id", nullable = false)
     private TaskEntity task;
 
-    @Column(nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id",  nullable = false)
+    private User user;
 
+    @NotNull
+    @Column(nullable = false)
     private String comment;
 
     private LocalDateTime createdAt;
@@ -42,9 +46,9 @@ public class RemarkEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    public RemarkEntity(TaskEntity task, String userId, String comment) {
+    public RemarkEntity(TaskEntity task, User user, String comment) {
         this.task = task;
-        this.userId = userId;
+        this.user = user;
         this.comment = comment;
         this.createdAt = LocalDateTime.now();
     }
