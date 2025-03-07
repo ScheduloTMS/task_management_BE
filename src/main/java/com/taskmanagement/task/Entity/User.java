@@ -17,14 +17,30 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(nullable = false)
     private String password;
-    private String photo;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY) // Use LAZY to optimize large file handling
+    @Column(name = "photo", columnDefinition = "BYTEA")
+    private byte[] photo;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    private LocalDateTime deletedAt = null;  // Explicitly set default to null
 
+    // Constructors
     public User() {}
 
+    public User(String userId, String name, String email, String password, byte[] photo) {
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.photo = photo;
+        this.deletedAt = null;
+    }
+
+    // Getters and Setters
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 
@@ -37,8 +53,8 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public String getPhoto() { return photo; }
-    public void setPhoto(String photo) { this.photo = photo; }
+    public byte[] getPhoto() { return photo; }
+    public void setPhoto(byte[] photo) { this.photo = photo; }
 
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
