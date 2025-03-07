@@ -1,35 +1,37 @@
 package com.taskmanagement.task.Entity;
 
-
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @Embeddable
 public class AssignmentId implements Serializable {
-    private Long userId;
-    private Long taskId;
+    private String userId;  
+    private UUID taskId;  
 
     public AssignmentId() {}
 
-    public AssignmentId(Long userId, Long taskId) {
+   
+    public AssignmentId(String userId, UUID taskId) {
         this.userId = userId;
         this.taskId = taskId;
     }
 
-    public Long getUserId() {
+   
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public Long getTaskId() {
+    public UUID getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(Long taskId) {
+    public void setTaskId(UUID taskId) {
         this.taskId = taskId;
     }
 

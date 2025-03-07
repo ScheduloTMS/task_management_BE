@@ -12,18 +12,17 @@ public class AssignmentEntity {
 
     @ManyToOne
     @MapsId("taskId")
-    @JoinColumn(name = "task_id", referencedColumnName = "id")
+    @JoinColumn(name = "Varun_id",referencedColumnName = "taskId")
     private TaskEntity task;
 
     @ManyToOne
-    @MapsId("userId")
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "Anna_id", referencedColumnName = "user_id")
     private User user;
-
+    
     private String uploads;
 
-    @Enumerated(EnumType.STRING)
-    private String status;
+    @Enumerated(EnumType.STRING) 
+    private Status status;
 
     private Double scores;
 
@@ -72,11 +71,11 @@ public class AssignmentEntity {
         this.uploads = uploads;
     }
 
-    public String getStatus() {
+    public Status getStatus() {  // Fixed: Using Status instead of String
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Status status) {  // Fixed: Using Status instead of String
         this.status = status;
     }
 
@@ -102,5 +101,11 @@ public class AssignmentEntity {
 
     public void setSubmittedAt(LocalDateTime submittedAt) {
         this.submittedAt = submittedAt;
+    }
+
+    // Correct enum usage
+    public enum Status {
+        SUBMITTED,
+        NOT_SUBMITTED
     }
 }

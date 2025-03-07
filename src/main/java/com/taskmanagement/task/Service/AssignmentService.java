@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AssignmentService {
@@ -21,10 +22,14 @@ public class AssignmentService {
         return assignmentRepository.findAll();
     }
 
-    // Get assignment by composite key (userId and taskId)
-    public Optional<AssignmentEntity> getAssignmentById(Long userId, Long taskId) {
+    public Optional<AssignmentEntity> getAssignmentById(String userId, UUID taskId) {
         AssignmentId id = new AssignmentId(userId, taskId);
         return assignmentRepository.findById(id);
+    }
+    
+    public void deleteAssignment(String userId, UUID taskId) {
+        AssignmentId id = new AssignmentId(userId, taskId);
+        assignmentRepository.deleteById(id);
     }
 
     // Save (Create/Update) an assignment
@@ -32,9 +37,5 @@ public class AssignmentService {
         return assignmentRepository.save(assignment);
     }
 
-    // Delete an assignment by composite key
-    public void deleteAssignment(Long userId, Long taskId) {
-        AssignmentId id = new AssignmentId(userId, taskId);
-        assignmentRepository.deleteById(id);
-    }
+
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/assignments")
@@ -25,7 +26,7 @@ public class AssignmentController {
 
     // Get assignment by composite key (userId and taskId)
     @GetMapping("/{userId}/{taskId}")
-    public ResponseEntity<AssignmentEntity> getAssignmentById(@PathVariable Long userId, @PathVariable Long taskId) {
+    public ResponseEntity<AssignmentEntity> getAssignmentById(@PathVariable String userId, @PathVariable UUID taskId) {
         Optional<AssignmentEntity> assignment = assignmentService.getAssignmentById(userId, taskId);
         return assignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -38,7 +39,7 @@ public class AssignmentController {
 
     // Delete an assignment by composite key
     @DeleteMapping("/{userId}/{taskId}")
-    public ResponseEntity<Void> deleteAssignment(@PathVariable Long userId, @PathVariable Long taskId) {
+    public ResponseEntity<Void> deleteAssignment(@PathVariable String userId, @PathVariable UUID taskId) {
         assignmentService.deleteAssignment(userId, taskId);
         return ResponseEntity.noContent().build();
     }

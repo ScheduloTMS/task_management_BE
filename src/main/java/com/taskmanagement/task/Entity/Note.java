@@ -13,7 +13,7 @@ public class Note {
     private UUID noteId;
     
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
     
     @Column(nullable = false)
