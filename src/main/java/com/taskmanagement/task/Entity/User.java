@@ -21,12 +21,10 @@ public class User {
     private String password;
 
     @Lob
-    @Basic(fetch = FetchType.LAZY) // Use LAZY to optimize large file handling
-    @Column(name = "photo", columnDefinition = "BYTEA")
     private byte[] photo;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt = null;  // Explicitly set default to null
+    private LocalDateTime deletedAt = null;
 
 
     public User() {}
