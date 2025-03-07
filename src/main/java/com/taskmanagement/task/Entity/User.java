@@ -28,7 +28,7 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt = null;  // Explicitly set default to null
 
-    // Constructors
+
     public User() {}
 
     public User(String userId, String name, String email, String password, byte[] photo) {
@@ -40,7 +40,7 @@ public class User {
         this.deletedAt = null;
     }
 
-    // Getters and Setters
+
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 
