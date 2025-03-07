@@ -1,80 +1,36 @@
 package com.taskmanagement.task.Entity;
+
 import jakarta.persistence.*;
-import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Objects;
-
-@Embeddable
-class AssignmentId implements Serializable {
-    private Long userId;
-    private Long taskId;
-
-    public AssignmentId() {}
-
-    public AssignmentId(Long userId, Long taskId) {
-        this.userId = userId;
-        this.taskId = taskId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(Long taskId) {
-        this.taskId = taskId;
-    }
-
-    @Override
-    public boolean equals(Object o) 
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AssignmentId that = (AssignmentId) o;
-        return Objects.equals(userId, that.userId) && Objects.equals(taskId, that.taskId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(userId, taskId);
-    }
-}
 
 @Entity
 @Table(name = "assignments")
 public class AssignmentEntity {
-    
+
     @EmbeddedId
     private AssignmentId id;
-    
+
     @ManyToOne
     @MapsId("taskId")
     @JoinColumn(name = "task_id", referencedColumnName = "id")
     private TaskEntity task;
-    
+
     @ManyToOne
     @MapsId("userId")
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
-    
+
     private String uploads;
-    
+
     @Enumerated(EnumType.STRING)
-    private Status status;
-    
+    private String status;
+
     private Double scores;
-    
+
     private LocalDateTime submittedOn;
     private LocalDateTime submittedAt;
-    
-    // Constructors, Getters, and Setters
+
+    // Constructors
     public AssignmentEntity() {}
 
     public AssignmentEntity(AssignmentId id, TaskEntity task, User user) {
@@ -83,6 +39,7 @@ public class AssignmentEntity {
         this.user = user;
     }
 
+    // Getters and Setters
     public AssignmentId getId() {
         return id;
     }
@@ -115,11 +72,11 @@ public class AssignmentEntity {
         this.uploads = uploads;
     }
 
-    public Status getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -146,9 +103,4 @@ public class AssignmentEntity {
     public void setSubmittedAt(LocalDateTime submittedAt) {
         this.submittedAt = submittedAt;
     }
-}
-
-enum Status {
-    SUBMITTED,
-    NOTSUBMITTED
 }
