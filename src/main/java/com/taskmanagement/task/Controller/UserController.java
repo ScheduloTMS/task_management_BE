@@ -23,24 +23,41 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
+    public ResponseEntity<Map<String, Object>> getAllUsers() {
         List<UserDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "Users retrieved successfully",
+                "body", users
+        ));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getUserById(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable String userId) {
         Optional<UserDTO> user = userService.getUserById(userId);
-        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return user.map(u -> ResponseEntity.ok(Map.of(
+                        "status", 200,
+                        "message", "User retrieved successfully",
+                        "body", u
+                )))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of(
+                        "status", 404,
+                        "message", "User not found"
+                )));
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user.getUserId(), user.getName(), user.getPassword()));
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user.getUserId(), user.getName(), user.getPassword());
+        return ResponseEntity.ok(Map.of(
+                "status", 201,
+                "message", "User created successfully",
+                "body", createdUser
+        ));
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<?> updateUser(
+    public ResponseEntity<Map<String, Object>> updateUser(
             @PathVariable String userId,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String password,
@@ -53,13 +70,19 @@ public class UserController {
                     "body", updatedUser
             ));
         } catch (RuntimeException | IOException e) {
-            return ResponseEntity.badRequest().body(Map.of("status", 400, "message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", 400,
+                    "message", e.getMessage()
+            ));
         }
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of(
+                "status", 200,
+                "message", "User deleted successfully"
+        ));
     }
 }

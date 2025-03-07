@@ -3,6 +3,7 @@ package com.taskmanagement.task.Service;
 import com.taskmanagement.task.DTO.UserDTO;
 import com.taskmanagement.task.Entity.User;
 import com.taskmanagement.task.Repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,27 +28,48 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
+    @Transactional
     public List<UserDTO> getAllUsers() {
         return userRepository.findAllByDeletedAtIsNull()
                 .stream()
-                .map(user -> new UserDTO(user.getUserId(), user.getName(), user.getEmail(), user.getPhoto()))
+                .map(user -> {
+                    UserDTO userDTO = new UserDTO();
+                    userDTO.setUserId(user.getUserId());
+                    userDTO.setName(user.getName());
+                    userDTO.setEmail(user.getEmail());
+
+                    if (user.getPhoto() != null) {
+                        userDTO.setPhoto(user.getPhoto().clone());
+                    }
+
+                    return userDTO;
+                })
                 .collect(Collectors.toList());
     }
 
 
+    @Transactional
     public Optional<UserDTO> getUserById(String userId) {
-        return userRepository.findByUserIdAndDeletedAtIsNull(userId)
-                .map(user -> new UserDTO(user.getUserId(), user.getName(), user.getEmail(), user.getPhoto()));
-    }
+        return userRepository.findById(userId).map(user -> {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setUserId(user.getUserId());
+            userDTO.setName(user.getName());
+            userDTO.setEmail(user.getEmail());
 
+
+            if (user.getPhoto() != null) {
+                userDTO.setPhoto(user.getPhoto().clone());
+            }
+
+            return userDTO;
+        });
+    }
 
     public User createUser(String userId, String name, String password) {
         String hashedPassword = passwordEncoder.encode(password);
         User user = new User(userId, name, null, hashedPassword, null);
         return userRepository.save(user);
     }
-
 
     public User updateUser(String userId, String email, String password, MultipartFile photo) throws IOException {
         User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
@@ -60,12 +82,11 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(password));
         }
         if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getInputStream().readAllBytes()); // Handle file input efficiently
+            user.setPhoto(photo.getBytes()); // Directly set the byte array
         }
 
         return userRepository.save(user);
     }
-
 
     public void deleteUser(String userId) {
         User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
@@ -74,7 +95,6 @@ public class UserService {
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
     }
-
 
     public void restoreUser(String userId) {
         User user = userRepository.findById(userId)

@@ -21,6 +21,7 @@ public class User {
     private String password;
 
     @Lob
+    @Basic(fetch = FetchType.EAGER)
     private byte[] photo;
 
     @Column(name = "deleted_at")
