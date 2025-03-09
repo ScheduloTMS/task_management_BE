@@ -9,20 +9,22 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Entity
-public class User {
+public class Users {
     @Id
-    private String userId; // MT001, ST001, etc. (primary key)
+    private String userId;
 
     private String name;
     private String password;
-    private String role; // MENTOR or STUDENT
+    private String role;
     private String email;
-    private String photo; // Optional
+
+    @Lob
+    private byte[] photo;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt; // Soft delete field
+    private LocalDateTime deletedAt;
 
-    // Getters and Setters
+
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public String getName() { return name; }
@@ -33,8 +35,8 @@ public class User {
     public void setRole(String role) { this.role = role; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-    public String getPhoto() { return photo; }
-    public void setPhoto(String photo) { this.photo = photo; }
+    public byte[] getPhoto() { return photo; }
+    public void setPhoto(byte[] photo) { this.photo = photo; }
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 

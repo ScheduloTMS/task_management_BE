@@ -1,110 +1,80 @@
 package com.taskmanagement.task.Service;
 
 import com.taskmanagement.task.DTO.UserDTO;
-import com.taskmanagement.task.Entity.User;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.UserRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+    @Autowired
+    private UserRepository userRepository;
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    public Users createUser(UserDTO userDTO) {
 
-    @Transactional
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAllByDeletedAtIsNull()
-                .stream()
-                .map(user -> {
-                    UserDTO userDTO = new UserDTO();
-                    userDTO.setUserId(user.getUserId());
-                    userDTO.setName(user.getName());
-                    userDTO.setEmail(user.getEmail());
-
-                    if (user.getPhoto() != null) {
-                        userDTO.setPhoto(user.getPhoto().clone());
-                    }
-
-                    return userDTO;
-                })
-                .collect(Collectors.toList());
-    }
+        String rolePrefix = userDTO.getRole().equals("MENTOR") ? "MT" : "ST";
+        String lastUserId = userRepository.findLastUserIdByRole(rolePrefix);
+        int nextId = lastUserId == null ? 1 : Integer.parseInt(lastUserId.substring(2)) + 1;
+        String newUserId = String.format("%s%03d", rolePrefix, nextId);
 
 
-    @Transactional
-    public Optional<UserDTO> getUserById(String userId) {
-        return userRepository.findById(userId).map(user -> {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setUserId(user.getUserId());
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-
-
-            if (user.getPhoto() != null) {
-                userDTO.setPhoto(user.getPhoto().clone());
-            }
-
-            return userDTO;
-        });
-    }
-
-    public User createUser(String userId, String name, String password) {
-        String hashedPassword = passwordEncoder.encode(password);
-        User user = new User(userId, name, null, hashedPassword, null);
+        Users user = new Users();
+        user.setUserId(newUserId);
+        user.setName(userDTO.getName());
+        user.setPassword(passwordEncoder.encode("TMS@123"));
+        user.setRole(userDTO.getRole());
+        user.setEmail(userDTO.getEmail());
         return userRepository.save(user);
     }
 
-    public User updateUser(String userId, String email, String password, MultipartFile photo) throws IOException {
-        User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        if (StringUtils.hasText(email)) {
-            user.setEmail(email);
+    public Users updateUser(Users user) {
+
+        Users existingUser = userRepository.findByUserId(user.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+            existingUser.setEmail(user.getEmail());
         }
-        if (StringUtils.hasText(password)) {
-            user.setPassword(passwordEncoder.encode(password));
-        }
-        if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getBytes()); // Directly set the byte array
+        if (user.getPhoto() != null) {
+            existingUser.setPhoto(user.getPhoto());
         }
 
-        return userRepository.save(user);
+
+        return userRepository.save(existingUser);
     }
+
 
     public void deleteUser(String userId) {
-        User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
+        Users user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
-    public void restoreUser(String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        if (user.getDeletedAt() != null) {
-            user.setDeletedAt(null);
+    public Users getUserById(String userId) {
+        return userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+
+    public void updatePassword(String userId, String currentPassword, String newPassword) {
+        Users user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (passwordEncoder.matches(currentPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
         } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is already active");
+            throw new RuntimeException("Current password is incorrect");
         }
     }
 }
