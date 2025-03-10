@@ -2,8 +2,10 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.DTO.ApiResponse;
 import com.taskmanagement.task.DTO.UserDTO;
+import com.taskmanagement.task.DTO.UpdatePasswordRequest;
 import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Service.UserService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +29,7 @@ public class UserController {
             Users createdUser = userService.createUser(userDTO);
             return ResponseEntity.ok(new ApiResponse(
                     HttpStatus.OK.value(),
-                    "User created successfully with default password (TMS@123).",
+                    "User created successfully with default password .",
                     mapToUserDTO(createdUser)
             ));
         } else {
@@ -87,6 +89,7 @@ public class UserController {
         }
     }
 
+    @Transactional
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         String userId = userDetails.getUsername();
@@ -98,14 +101,18 @@ public class UserController {
         ));
     }
 
+    @Transactional
     @PostMapping("/update-password")
     public ResponseEntity<ApiResponse> updatePassword(
-            @RequestParam String currentPassword,
-            @RequestParam String newPassword,
+            @RequestBody UpdatePasswordRequest updatePasswordRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
         String userId = userDetails.getUsername();
         try {
-            userService.updatePassword(userId, currentPassword, newPassword);
+            userService.updatePassword(
+                    userId,
+                    updatePasswordRequest.getCurrentPassword(),
+                    updatePasswordRequest.getNewPassword()
+            );
             return ResponseEntity.ok(new ApiResponse(
                     HttpStatus.OK.value(),
                     "Password updated successfully.",
