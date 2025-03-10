@@ -13,6 +13,7 @@ public interface UserRepository extends JpaRepository<Users, String> {
     String findLastUserIdByRole(String rolePrefix);
 
 
+
     List<Users> findAllByDeletedAtIsNull();
 
 
