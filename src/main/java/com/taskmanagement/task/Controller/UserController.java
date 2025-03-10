@@ -27,7 +27,7 @@ public class UserController {
             Users createdUser = userService.createUser(userDTO);
             return ResponseEntity.ok(new ApiResponse(
                     HttpStatus.OK.value(),
-                    "User created successfully with default password (TMS@123).", // message
+                    "User created successfully with default password (TMS@123).",
                     mapToUserDTO(createdUser)
             ));
         } else {
@@ -55,7 +55,7 @@ public class UserController {
             user.setEmail(email);
         }
         if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getBytes()); // Convert MultipartFile to byte[]
+            user.setPhoto(photo.getBytes());
         }
 
 

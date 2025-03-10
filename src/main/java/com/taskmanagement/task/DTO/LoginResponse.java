@@ -3,8 +3,7 @@ package com.taskmanagement.task.DTO;
 public class LoginResponse {
     private int statusCode;
     private String message;
-    private String response; // JWT token or error message
-
+    private String response;
 
     public int getStatusCode() { return statusCode; }
     public void setStatusCode(int statusCode) { this.statusCode = statusCode; }
