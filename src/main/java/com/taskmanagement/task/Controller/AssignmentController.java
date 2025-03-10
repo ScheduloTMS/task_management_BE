@@ -29,11 +29,11 @@ public class AssignmentController
                                             @RequestParam String userId, 
                                             @RequestParam(required = false) MultipartFile file, 
                                             @RequestParam String submissionStatus, 
-                                            @RequestParam String score, 
-                                            @RequestParam String feedback) {
+                                            @RequestParam String score
+                                            ) {
         try {
             byte[] fileData = (file != null) ? file.getBytes() : null;
-            AssignmentEntity savedAssignment = assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score, feedback);
+            AssignmentEntity savedAssignment = assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
             return ResponseEntity.ok(savedAssignment);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -56,12 +56,12 @@ public class AssignmentController
                                                              @RequestParam String userId, 
                                                              @RequestParam(required = false) MultipartFile file, 
                                                              @RequestParam String submissionStatus,
-                                                             @RequestParam String score, 
-                                                             @RequestParam String feedback) 
+                                                             @RequestParam String score
+                                                             ) 
     {
         try {
             byte[] fileData = (file != null) ? file.getBytes() : null;
-            Optional<AssignmentEntity> updatedAssignment = assignmentService.updateAssignment(taskId, userId, fileData, submissionStatus,score, feedback);
+            Optional<AssignmentEntity> updatedAssignment = assignmentService.updateAssignment(taskId, userId, fileData, submissionStatus,score);
             return updatedAssignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
         } 
         catch (IOException e) {

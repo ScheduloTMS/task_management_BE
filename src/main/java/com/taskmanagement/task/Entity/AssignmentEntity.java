@@ -20,14 +20,14 @@ public class AssignmentEntity {
     private String submissionStatus;
     private LocalDateTime submittedAt;
     private String score;
-    private String feedback;
 
-    public AssignmentEntity(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score, String feedback) {
+
+    public AssignmentEntity(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score)
+     {
         this.id = new AssignmentId(taskId, userId);
         this.fileUploads = fileUploads;
         this.submissionStatus = submissionStatus;
         this.submittedAt = LocalDateTime.now();
         this.score = score;
-        this.feedback = feedback;
     }
 }
