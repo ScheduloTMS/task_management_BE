@@ -26,16 +26,14 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/users/update-password").authenticated()
                         .requestMatchers("/api/users/create").hasRole("MENTOR")
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
-                        .requestMatchers("/api/users/profile").authenticated()
+                        .requestMatchers("/api/users/profile", "/api/users/update-password").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
-
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
