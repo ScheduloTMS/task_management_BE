@@ -3,6 +3,7 @@ package com.taskmanagement.task.Service;
 import com.taskmanagement.task.DTO.UserDTO;
 import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,10 +37,8 @@ public class UserService {
 
 
     public Users updateUser(Users user) {
-
         Users existingUser = userRepository.findByUserId(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
 
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             existingUser.setEmail(user.getEmail());
@@ -47,7 +46,6 @@ public class UserService {
         if (user.getPhoto() != null) {
             existingUser.setPhoto(user.getPhoto());
         }
-
 
         return userRepository.save(existingUser);
     }
@@ -66,7 +64,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-
+    @Transactional
     public void updatePassword(String userId, String currentPassword, String newPassword) {
         Users user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
