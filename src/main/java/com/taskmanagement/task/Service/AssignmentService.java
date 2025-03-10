@@ -23,7 +23,8 @@ public class AssignmentService {
     // ✅ Save (Post) an assignment
     @Transactional
     public AssignmentEntity saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus
-                                            , String score, String feedback) {
+                                            , String score, String feedback) 
+    {
         AssignmentEntity assignment = new AssignmentEntity(taskId, userId, file, submissionStatus, score, feedback);
         return assignmentRepository.save(assignment);
     }
@@ -36,15 +37,15 @@ public class AssignmentService {
 
     // ✅ Update (Edit) an assignment
     @Transactional
-    public Optional<AssignmentEntity> updateAssignment(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, 
-                                                       LocalDateTime submittedAt, String score, String feedback) {
+    public Optional<AssignmentEntity> updateAssignment(UUID taskId, String userId, byte[] file,String submissionStatus,String score, String feedback) 
+    {
         AssignmentId id = new AssignmentId(taskId, userId);
         Optional<AssignmentEntity> existingAssignment = assignmentRepository.findById(id);
         if (existingAssignment.isPresent()) {
             AssignmentEntity assignment = existingAssignment.get();
-            assignment.setFileUploads(fileUploads);
+            assignment.setFileUploads(file);
             assignment.setSubmissionStatus(submissionStatus);
-            assignment.setSubmittedAt(submittedAt);
+            assignment.setSubmittedAt(LocalDateTime.now());
             assignment.setScore(score);
             assignment.setFeedback(feedback);
             return Optional.of(assignmentRepository.save(assignment));

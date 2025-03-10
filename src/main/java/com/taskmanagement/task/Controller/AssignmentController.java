@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+// import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,22 +42,32 @@ public class AssignmentController
     }
 
     // ✅ GET: Retrieve an assignment by user ID and task ID
-    @GetMapping
-    public ResponseEntity<AssignmentEntity> getAssignment(@RequestParam String userId, @RequestParam UUID taskId) {
-        Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(userId, taskId);
-        return assignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    @GetMapping("/{userId}/{taskId}")
+    public ResponseEntity<AssignmentEntity> getAssignment(@PathVariable String userId, 
+                                                      @PathVariable UUID taskId) 
+    {
+    Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(userId, taskId);
+    return assignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // ✅ PUT: Update an existing assignment
-    @PutMapping
-    public ResponseEntity<AssignmentEntity> updateAssignment(@RequestParam UUID taskId, 
+    @PutMapping(consumes = "multipart/form-data") 
+    public ResponseEntity<?> updateAssignment(@RequestParam UUID taskId, 
                                                              @RequestParam String userId, 
-                                                             @RequestParam byte[] fileUploads, 
-                                                             @RequestParam String submissionStatus, 
-                                                             @RequestParam LocalDateTime submittedAt, 
+                                                             @RequestParam(required = false) MultipartFile file, 
+                                                             @RequestParam String submissionStatus,
                                                              @RequestParam String score, 
-                                                             @RequestParam String feedback) {
-        Optional<AssignmentEntity> updatedAssignment = assignmentService.updateAssignment(taskId, userId, fileUploads, submissionStatus, submittedAt, score, feedback);
-        return updatedAssignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+                                                             @RequestParam String feedback) 
+    {
+        try {
+            byte[] fileData = (file != null) ? file.getBytes() : null;
+            Optional<AssignmentEntity> updatedAssignment = assignmentService.updateAssignment(taskId, userId, fileData, submissionStatus,score, feedback);
+            return updatedAssignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        } 
+        catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error processing file: " + e.getMessage());
+        }
+        
     }
 }
