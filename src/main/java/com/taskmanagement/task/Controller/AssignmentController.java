@@ -1,46 +1,63 @@
 package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.Entity.AssignmentEntity;
-//import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Service.AssignmentService;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/assignments")
-public class AssignmentController {
+public class AssignmentController 
+{
+    private final AssignmentService assignmentService;
 
-    @Autowired
-    private AssignmentService assignmentService;
-
-    // Get all assignments
-    @GetMapping
-    public ResponseEntity<List<AssignmentEntity>> getAllAssignments() {
-        return ResponseEntity.ok(assignmentService.getAllAssignments());
+    public AssignmentController(AssignmentService assignmentService) {
+        this.assignmentService = assignmentService;
     }
 
-    // Get assignment by composite key (userId and taskId)
-    @GetMapping("/{userId}/{taskId}")
-    public ResponseEntity<AssignmentEntity> getAssignmentById(@PathVariable String userId, @PathVariable UUID taskId) {
-        Optional<AssignmentEntity> assignment = assignmentService.getAssignmentById(userId, taskId);
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<?> createAssignment(@RequestParam UUID taskId, 
+                                            @RequestParam String userId, 
+                                            @RequestParam(required = false) MultipartFile file, 
+                                            @RequestParam String submissionStatus, 
+                                            @RequestParam String score, 
+                                            @RequestParam String feedback) {
+        try {
+            byte[] fileData = (file != null) ? file.getBytes() : null;
+            AssignmentEntity savedAssignment = assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score, feedback);
+            return ResponseEntity.ok(savedAssignment);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error processing file: " + e.getMessage());
+        }
+    }
+
+    // ✅ GET: Retrieve an assignment by user ID and task ID
+    @GetMapping
+    public ResponseEntity<AssignmentEntity> getAssignment(@RequestParam String userId, @RequestParam UUID taskId) {
+        Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(userId, taskId);
         return assignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Create or update an assignment
-    @PostMapping
-    public ResponseEntity<AssignmentEntity> createOrUpdateAssignment(@RequestBody AssignmentEntity assignment) {
-        return ResponseEntity.ok(assignmentService.saveAssignment(assignment));
-    }
-
-    // Delete an assignment by composite key
-    @DeleteMapping("/{userId}/{taskId}")
-    public ResponseEntity<Void> deleteAssignment(@PathVariable String userId, @PathVariable UUID taskId) {
-        assignmentService.deleteAssignment(userId, taskId);
-        return ResponseEntity.noContent().build();
+    // ✅ PUT: Update an existing assignment
+    @PutMapping
+    public ResponseEntity<AssignmentEntity> updateAssignment(@RequestParam UUID taskId, 
+                                                             @RequestParam String userId, 
+                                                             @RequestParam byte[] fileUploads, 
+                                                             @RequestParam String submissionStatus, 
+                                                             @RequestParam LocalDateTime submittedAt, 
+                                                             @RequestParam String score, 
+                                                             @RequestParam String feedback) {
+        Optional<AssignmentEntity> updatedAssignment = assignmentService.updateAssignment(taskId, userId, fileUploads, submissionStatus, submittedAt, score, feedback);
+        return updatedAssignment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

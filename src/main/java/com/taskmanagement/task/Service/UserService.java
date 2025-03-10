@@ -28,6 +28,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+
     @Transactional
     public List<UserDTO> getAllUsers() {
         return userRepository.findAllByDeletedAtIsNull()
@@ -64,6 +65,8 @@ public class UserService {
             return userDTO;
         });
     }
+
+
 
     public User createUser(String userId, String name, String password) {
         String hashedPassword = passwordEncoder.encode(password);
