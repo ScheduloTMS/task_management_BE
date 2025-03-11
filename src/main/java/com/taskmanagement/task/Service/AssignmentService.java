@@ -13,35 +13,38 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class AssignmentService {
+public class AssignmentService 
+{
     private final AssignmentRepository assignmentRepository;
 
-    public AssignmentService(AssignmentRepository assignmentRepository) {
+    public AssignmentService(AssignmentRepository assignmentRepository) 
+    {
         this.assignmentRepository = assignmentRepository;
     }
 
-    // ✅ Save (Post) an assignment
+    // Post
     @Transactional
-    public AssignmentEntity saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus
-                                            , String score) 
+    public AssignmentEntity saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score) 
     {
         AssignmentEntity assignment = new AssignmentEntity(taskId, userId, file, submissionStatus, score);
         return assignmentRepository.save(assignment);
     }
 
-    // ✅ Get assignment by User ID and Task ID (Fixed)
-    public Optional<AssignmentEntity> getAssignmentByUserAndTask(String userId, UUID taskId) {
+    // Get
+    public Optional<AssignmentEntity> getAssignmentByUserAndTask(String userId, UUID taskId) 
+    {
         AssignmentId id = new AssignmentId(taskId, userId);
         return assignmentRepository.findById(id);
     }
 
-    // ✅ Update (Edit) an assignment
+    // Edit
     @Transactional
     public Optional<AssignmentEntity> updateAssignment(UUID taskId, String userId, byte[] file,String submissionStatus,String score) 
     {
         AssignmentId id = new AssignmentId(taskId, userId);
         Optional<AssignmentEntity> existingAssignment = assignmentRepository.findById(id);
-        if (existingAssignment.isPresent()) {
+        if (existingAssignment.isPresent()) 
+        {
             AssignmentEntity assignment = existingAssignment.get();
             assignment.setFileUploads(file);
             assignment.setSubmissionStatus(submissionStatus);

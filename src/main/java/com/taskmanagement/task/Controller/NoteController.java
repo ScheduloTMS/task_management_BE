@@ -1,7 +1,6 @@
 package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.Service.NoteService;
-import com.taskmanagement.task.DTO.NoteDTO;
 import com.taskmanagement.task.Entity.Note;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,19 +16,26 @@ public class NoteController {
     @Autowired
     private NoteService noteService;
 
-    @GetMapping
-    public ResponseEntity<List<NoteDTO>> getNotes() {
-        return ResponseEntity.ok(noteService.getAllNotes());
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<Note>> getUserNotes(@PathVariable String userId) 
+    {
+        return ResponseEntity.ok(noteService.getNotesByUser(userId));
     }
 
-    @PostMapping
-    public ResponseEntity<Note> createNote(@RequestBody Note note) {
-        return ResponseEntity.ok(noteService.saveNote(note));
+    @PostMapping("/{userId}")
+    public ResponseEntity<Note> createNote(@PathVariable String userId, @RequestBody Note note) {
+        return ResponseEntity.ok(noteService.saveNoteForUser(userId, note));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNote(@PathVariable UUID id) { // Use UUID instead of Long
-        noteService.deleteNote(id);
+    @PutMapping("/{userId}/{noteId}")
+    public ResponseEntity<Note> updateNote(@PathVariable String userId, @PathVariable UUID noteId, @RequestBody Note note) {
+        return ResponseEntity.ok(noteService.updateUserNote(userId, noteId, note));
+    }
+
+    @DeleteMapping("/{noteId}")
+    public ResponseEntity<Void> deleteNote(@PathVariable UUID noteId) 
+    {
+        noteService.softDeleteNote(noteId);
         return ResponseEntity.noContent().build();
     }
 }

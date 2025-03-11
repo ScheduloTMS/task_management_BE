@@ -3,8 +3,12 @@ package com.taskmanagement.task.Repository;
 import com.taskmanagement.task.Entity.Note;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface NoteRepository extends JpaRepository<Note, UUID> {
+public interface NoteRepository extends JpaRepository<Note, UUID> 
+{ 
+    List<Note> findByUser_UserIdAndDeletedAtIsNull(String userId);
 }

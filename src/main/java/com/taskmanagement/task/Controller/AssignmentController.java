@@ -10,7 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
-// import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,12 +29,16 @@ public class AssignmentController
                                             @RequestParam(required = false) MultipartFile file, 
                                             @RequestParam String submissionStatus, 
                                             @RequestParam String score
-                                            ) {
-        try {
+                                            ) 
+    {
+        try 
+        {
             byte[] fileData = (file != null) ? file.getBytes() : null;
             AssignmentEntity savedAssignment = assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
             return ResponseEntity.ok(savedAssignment);
-        } catch (IOException e) {
+        } 
+        catch (IOException e) 
+        {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error processing file: " + e.getMessage());
         }
