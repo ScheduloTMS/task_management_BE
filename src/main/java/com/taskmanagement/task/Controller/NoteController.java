@@ -11,7 +11,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/notes")
-public class NoteController {
+public class NoteController 
+{
 
     @Autowired
     private NoteService noteService;

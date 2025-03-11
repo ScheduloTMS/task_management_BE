@@ -24,10 +24,10 @@ public class AssignmentService
 
     // Post
     @Transactional
-    public AssignmentEntity saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score) 
+    public void saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score) 
     {
         AssignmentEntity assignment = new AssignmentEntity(taskId, userId, file, submissionStatus, score);
-        return assignmentRepository.save(assignment);
+        assignmentRepository.save(assignment);
     }
 
     // Get
@@ -39,20 +39,17 @@ public class AssignmentService
 
     // Edit
     @Transactional
-    public Optional<AssignmentEntity> updateAssignment(UUID taskId, String userId, byte[] file,String submissionStatus,String score) 
-    {
+    public AssignmentEntity updateAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score) {
         AssignmentId id = new AssignmentId(taskId, userId);
-        Optional<AssignmentEntity> existingAssignment = assignmentRepository.findById(id);
-        if (existingAssignment.isPresent()) 
-        {
-            AssignmentEntity assignment = existingAssignment.get();
-            assignment.setFileUploads(file);
-            assignment.setSubmissionStatus(submissionStatus);
-            assignment.setSubmittedAt(LocalDateTime.now());
-            assignment.setScore(score);
-
-            return Optional.of(assignmentRepository.save(assignment));
-        }
-        return Optional.empty();
+        AssignmentEntity assignment = assignmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+    
+        assignment.setFileUploads(file);
+        assignment.setSubmissionStatus(submissionStatus);
+        assignment.setSubmittedAt(LocalDateTime.now());
+        assignment.setScore(score);
+    
+        return assignmentRepository.save(assignment);
     }
+    
 }

@@ -16,4 +16,3 @@ public interface TaskRepository extends JpaRepository<TaskEntity, UUID> {
 
     Optional<TaskEntity> findByTaskIdAndDeletedAtIsNull(UUID taskId);
 }
-

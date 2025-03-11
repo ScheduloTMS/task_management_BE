@@ -25,13 +25,11 @@ public class TaskController {
 
 
     @PostMapping(consumes = "multipart/form-data")
-    
     public ResponseEntity<Map<String, Object>> createTask(
             @RequestParam String title,
             @RequestParam String description,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
-            @RequestParam(required = false) MultipartFile file) 
-    {
+            @RequestParam(required = false) MultipartFile file) {
 
         try {
             byte[] fileData = (file != null) ? file.getBytes() : null;

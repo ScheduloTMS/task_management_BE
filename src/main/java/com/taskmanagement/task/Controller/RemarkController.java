@@ -9,17 +9,20 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-public class RemarkController {
+public class RemarkController 
+{
 
     private final RemarkService remarkService;
 
-    public RemarkController(RemarkService remarkService) {
+    public RemarkController(RemarkService remarkService) 
+    {
         this.remarkService = remarkService;
     }
 
 
     @GetMapping("tasks/{task_id}/remarks")
-    public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) {
+    public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) 
+    {
         List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
 
         Map<String, Object> response = new HashMap<>();

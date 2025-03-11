@@ -11,7 +11,8 @@ import java.util.UUID;
 @Table(name = "notes")
 @Data
 @NoArgsConstructor
-public class Note {
+public class Note
+{
     
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

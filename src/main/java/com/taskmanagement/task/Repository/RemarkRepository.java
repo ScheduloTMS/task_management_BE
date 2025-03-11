@@ -12,7 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface RemarkRepository extends JpaRepository<RemarkEntity, UUID> {
+public interface RemarkRepository extends JpaRepository<RemarkEntity, UUID> 
+{
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.photo WHERE u.userId = :userId")
     Optional<User> findByIdWithPhoto(@Param("userId") String userId);
 
