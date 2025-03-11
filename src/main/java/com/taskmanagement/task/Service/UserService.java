@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 
 @Service
@@ -18,13 +19,12 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Transactional
     public Users createUser(UserDTO userDTO) {
-
         String rolePrefix = userDTO.getRole().equals("MENTOR") ? "MT" : "ST";
         String lastUserId = userRepository.findLastUserIdByRole(rolePrefix);
         int nextId = lastUserId == null ? 1 : Integer.parseInt(lastUserId.substring(2)) + 1;
         String newUserId = String.format("%s%03d", rolePrefix, nextId);
-
 
         Users user = new Users();
         user.setUserId(newUserId);
@@ -35,9 +35,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public Users getUserByIdWithPhoto(String userId) {
+        return userRepository.findByIdWithPhoto(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
+    @Transactional
     public Users updateUser(Users user) {
-        Users existingUser = userRepository.findByUserId(user.getUserId())
+        Users existingUser = userRepository.findByIdWithPhoto(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
@@ -50,7 +56,7 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
-
+    @Transactional
     public void deleteUser(String userId) {
         Users user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -58,7 +64,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-
+    @Transactional
     public Users getUserById(String userId) {
         return userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -66,7 +72,7 @@ public class UserService {
 
     @Transactional
     public void updatePassword(String userId, String currentPassword, String newPassword) {
-        Users user = userRepository.findByUserId(userId)
+        Users user = userRepository.findByIdWithPhoto(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (passwordEncoder.matches(currentPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
