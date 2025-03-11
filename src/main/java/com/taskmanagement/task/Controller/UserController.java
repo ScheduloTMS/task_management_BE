@@ -23,13 +23,14 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/create")
+    @Transactional
     public ResponseEntity<ApiResponse> createUser(@RequestBody UserDTO userDTO, @AuthenticationPrincipal UserDetails userDetails) {
         Users currentUser = userService.getUserById(userDetails.getUsername());
         if (currentUser.getRole().equals("MENTOR")) {
             Users createdUser = userService.createUser(userDTO);
             return ResponseEntity.ok(new ApiResponse(
                     HttpStatus.OK.value(),
-                    "User created successfully with default password .",
+                    "User created successfully with default password.",
                     mapToUserDTO(createdUser)
             ));
         } else {
@@ -42,16 +43,14 @@ public class UserController {
     }
 
     @PutMapping("/profile")
+    @Transactional
     public ResponseEntity<ApiResponse> updateProfile(
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         String currentUserId = userDetails.getUsername();
-
-
-        Users user = userService.getUserById(currentUserId);
-
+        Users user = userService.getUserByIdWithPhoto(currentUserId);
 
         if (email != null && !email.isEmpty()) {
             user.setEmail(email);
@@ -59,7 +58,6 @@ public class UserController {
         if (photo != null && !photo.isEmpty()) {
             user.setPhoto(photo.getBytes());
         }
-
 
         Users updatedUser = userService.updateUser(user);
 
@@ -71,6 +69,7 @@ public class UserController {
     }
 
     @DeleteMapping("/delete/{userId}")
+    @Transactional
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable String userId, @AuthenticationPrincipal UserDetails userDetails) {
         Users currentUser = userService.getUserById(userDetails.getUsername());
         if (currentUser.getRole().equals("MENTOR")) {
@@ -89,11 +88,11 @@ public class UserController {
         }
     }
 
-    @Transactional
     @GetMapping("/profile")
+    @Transactional
     public ResponseEntity<ApiResponse> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         String userId = userDetails.getUsername();
-        Users user = userService.getUserById(userId);
+        Users user = userService.getUserByIdWithPhoto(userId);
         return ResponseEntity.ok(new ApiResponse(
                 HttpStatus.OK.value(),
                 "User profile retrieved successfully.",
@@ -101,8 +100,8 @@ public class UserController {
         ));
     }
 
-    @Transactional
     @PostMapping("/update-password")
+    @Transactional
     public ResponseEntity<ApiResponse> updatePassword(
             @RequestBody UpdatePasswordRequest updatePasswordRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
