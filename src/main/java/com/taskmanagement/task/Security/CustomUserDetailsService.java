@@ -1,4 +1,4 @@
-package com.taskmanagement.task.Security; 
+package com.taskmanagement.task.Security;
 
 import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.UserRepository;
@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return User.builder()
                 .username(users.getUserId())
                 .password(users.getPassword())
-                .roles(users.getRole())
+                .roles("ROLE_" + users.getRole())
                 .build();
     }
 }
