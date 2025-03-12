@@ -25,8 +25,6 @@ public class AuthService {
     public String login(String userId, String password) {
         Optional<Users> user = userRepository.findByUserId(userId);
         if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
-
-            byte[] photo = user.get().getPhoto();
             return jwtUtil.generateToken(userId);
         }
         throw new RuntimeException("Invalid userId or password");

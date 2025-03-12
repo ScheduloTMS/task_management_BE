@@ -36,14 +36,8 @@ public class UserService {
     }
 
     @Transactional
-    public Users getUserByIdWithPhoto(String userId) {
-        return userRepository.findByIdWithPhoto(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
-
-    @Transactional
     public Users updateUser(Users user) {
-        Users existingUser = userRepository.findByIdWithPhoto(user.getUserId())
+        Users existingUser = userRepository.findById(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
@@ -72,7 +66,7 @@ public class UserService {
 
     @Transactional
     public void updatePassword(String userId, String currentPassword, String newPassword) {
-        Users user = userRepository.findByIdWithPhoto(userId)
+        Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (passwordEncoder.matches(currentPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
