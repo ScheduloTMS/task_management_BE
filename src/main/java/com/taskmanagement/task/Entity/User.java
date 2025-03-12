@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-public class User {
-
+public class User 
+{
     @Id
     @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
@@ -28,10 +28,8 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt = null;
 
-
-    public User() {}
-
-    public User(String userId, String name, String email, String password, byte[] photo) {
+    public User(String userId, String name, String email, String password, byte[] photo) 
+    {
         this.userId = userId;
         this.name = name;
         this.email = email;
@@ -41,7 +39,10 @@ public class User {
     }
 
 
-    public String getUserId() { return userId; }
+    public String getUserId() 
+    { 
+        return userId; 
+    }
     public void setUserId(String userId) { this.userId = userId; }
 
     public String getName() { return name; }

@@ -74,7 +74,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
     public User updateUser(String userId, String email, String password, MultipartFile photo) throws IOException {
         User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -86,12 +85,11 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(password));
         }
         if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getInputStream().readAllBytes()); // Handle file input efficiently
+            user.setPhoto(photo.getBytes()); // Directly set the byte array
         }
 
         return userRepository.save(user);
     }
-
 
     public void deleteUser(String userId) {
         User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
@@ -100,7 +98,6 @@ public class UserService {
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
     }
-
 
     public void restoreUser(String userId) {
         User user = userRepository.findById(userId)

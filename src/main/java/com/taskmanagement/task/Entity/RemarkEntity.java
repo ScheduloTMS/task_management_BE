@@ -13,7 +13,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RemarkEntity {
+public class RemarkEntity 
+{
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID remarkId;
@@ -42,11 +43,13 @@ public class RemarkEntity {
         return deletedAt != null;
     }
 
-    public void softDelete() {
+    public void softDelete() 
+    {
         this.deletedAt = LocalDateTime.now();
     }
 
-    public RemarkEntity(TaskEntity task, User user, String comment) {
+    public RemarkEntity(TaskEntity task, User user, String comment) 
+    {
         this.task = task;
         this.user = user;
         this.comment = comment;

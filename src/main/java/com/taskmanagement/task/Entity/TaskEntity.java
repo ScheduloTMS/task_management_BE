@@ -9,11 +9,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "tasks")
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
+
 @AllArgsConstructor
-public class TaskEntity {
+public class TaskEntity 
+{
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID taskId;
@@ -30,11 +30,13 @@ public class TaskEntity {
     private LocalDateTime deletedAt;
 
     @PrePersist
-    protected void onCreate() {
+    protected void onCreate() 
+    {
         this.createdAt = LocalDate.now();
     }
 
-    public TaskEntity(String title, String description, LocalDate dueDate, byte[] file) {
+    public TaskEntity(String title, String description, LocalDate dueDate, byte[] file) 
+    {
         this.title = title;
         this.description = description;
         this.createdAt = LocalDate.now();
