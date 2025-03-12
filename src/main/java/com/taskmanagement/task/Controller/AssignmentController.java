@@ -22,26 +22,44 @@ public class AssignmentController
     AssignmentService assignmentService;
 
 
+    // @PostMapping(consumes = "multipart/form-data")
+    // public ResponseEntity<String> createAssignment(@RequestParam UUID taskId, 
+    //                                         @RequestParam String userId, 
+    //                                         @RequestParam(required = false) MultipartFile file, 
+    //                                         @RequestParam String submissionStatus, 
+    //                                         @RequestParam String score
+    //                                         ) 
+    // {
+    //     try 
+    //     {
+    //         byte[] fileData = (file != null) ? file.getBytes() : null;
+    //         assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
+    //         return ResponseEntity.status(HttpStatus.CREATED).body("Assignment created successfully");
+    //     } 
+    //     catch (IOException e) 
+    //     {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body("Error processing file: " + e.getMessage());
+    //     }
+    // }
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<String> createAssignment(@RequestParam UUID taskId, 
-                                            @RequestParam String userId, 
-                                            @RequestParam(required = false) MultipartFile file, 
-                                            @RequestParam String submissionStatus, 
-                                            @RequestParam String score
-                                            ) 
+    public ResponseEntity<String> createAssignment( @RequestParam UUID taskId, 
+                                                    @RequestParam String userId, 
+                                                    @RequestParam(required = false) MultipartFile file) 
     {
-        try 
-        {
-            byte[] fileData = (file != null) ? file.getBytes() : null;
-            assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Assignment created successfully");
-        } 
-        catch (IOException e) 
-        {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error processing file: " + e.getMessage());
-        }
+    try {
+        byte[] fileData = (file != null) ? file.getBytes() : null;
+        String submissionStatus = "Submitted,Marked for review";
+        String score = null;
+
+        assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Assignment created successfully");
+    } catch (IOException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Error processing file: " + e.getMessage());
     }
+}
+
 
     @GetMapping("/{userId}/{taskId}")
     public ResponseEntity<AssignmentEntity> getAssignment(@PathVariable String userId,@PathVariable UUID taskId) 
@@ -54,12 +72,12 @@ public class AssignmentController
     public ResponseEntity<String> updateAssignment(@RequestParam UUID taskId, 
                         @RequestParam String userId, 
                         @RequestParam(required = false) MultipartFile file, 
-                        @RequestParam String submissionStatus,
                         @RequestParam String score) 
     {
         try 
         {
             byte[] fileData = (file != null) ? file.getBytes() : null;
+            String submissionStatus="Reviewed";
             assignmentService.updateAssignment(taskId, userId, fileData, submissionStatus, score);
             return ResponseEntity.ok("Assignment updated successfully");
         } 

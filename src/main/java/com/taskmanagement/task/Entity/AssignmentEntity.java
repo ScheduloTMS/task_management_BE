@@ -19,6 +19,8 @@ public class AssignmentEntity {
     private byte[] fileUploads;
     private String submissionStatus;
     private LocalDateTime submittedAt;
+
+    @Column(nullable = true) 
     private String score;
 
 
