@@ -21,27 +21,6 @@ public class AssignmentController
     @Autowired
     AssignmentService assignmentService;
 
-
-    // @PostMapping(consumes = "multipart/form-data")
-    // public ResponseEntity<String> createAssignment(@RequestParam UUID taskId, 
-    //                                         @RequestParam String userId, 
-    //                                         @RequestParam(required = false) MultipartFile file, 
-    //                                         @RequestParam String submissionStatus, 
-    //                                         @RequestParam String score
-    //                                         ) 
-    // {
-    //     try 
-    //     {
-    //         byte[] fileData = (file != null) ? file.getBytes() : null;
-    //         assignmentService.saveAssignment(taskId, userId, fileData, submissionStatus, score);
-    //         return ResponseEntity.status(HttpStatus.CREATED).body("Assignment created successfully");
-    //     } 
-    //     catch (IOException e) 
-    //     {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .body("Error processing file: " + e.getMessage());
-    //     }
-    // }
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<String> createAssignment( @RequestParam UUID taskId, 
                                                     @RequestParam String userId, 

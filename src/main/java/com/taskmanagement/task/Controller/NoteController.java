@@ -18,11 +18,11 @@ public class NoteController
     private NoteService noteService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<Note>> getUserNotes(@PathVariable String userId) 
+    public List<Note> getUserNotes(@PathVariable String userId) 
     {
-        return ResponseEntity.ok(noteService.getNotesByUser(userId));
+        return noteService.getNotesByUser(userId);
     }
-
+    
     @PostMapping("/{userId}")
     public ResponseEntity<Note> createNote(@PathVariable String userId, @RequestBody Note note) {
         return ResponseEntity.ok(noteService.saveNoteForUser(userId, note));

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Table(name = "users")
 public class User 
 {
+
     @Id
     @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
@@ -27,6 +28,9 @@ public class User
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt = null;
+
+
+    public User() {}
 
     public User(String userId, String name, String email, String password, byte[] photo) 
     {
