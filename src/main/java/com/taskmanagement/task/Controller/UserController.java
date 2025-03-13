@@ -2,7 +2,6 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.DTO.ApiResponse;
 import com.taskmanagement.task.DTO.UserDTO;
-import com.taskmanagement.task.DTO.UpdatePasswordRequest;
 import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Service.UserService;
 import jakarta.transaction.Transactional;
@@ -47,17 +46,40 @@ public class UserController {
     public ResponseEntity<ApiResponse> updateProfile(
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
+            @RequestParam(value = "currentPassword", required = false) String currentPassword,
+            @RequestParam(value = "newPassword", required = false) String newPassword,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         String currentUserId = userDetails.getUsername();
-        Users user = userService.getUserByIdWithPhoto(currentUserId);
+        Users user = userService.getUserById(currentUserId);
+
 
         if (email != null && !email.isEmpty()) {
             user.setEmail(email);
         }
+
+
         if (photo != null && !photo.isEmpty()) {
             user.setPhoto(photo.getBytes());
         }
+
+
+        if (currentPassword != null && newPassword != null) {
+            if (userService.validateAndUpdatePassword(currentUserId, currentPassword, newPassword)) {
+                return ResponseEntity.ok(new ApiResponse(
+                        HttpStatus.OK.value(),
+                        "Profile and password updated successfully.",
+                        mapToUserDTO(user)
+                ));
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Current password is incorrect.",
+                        null
+                ));
+            }
+        }
+
 
         Users updatedUser = userService.updateUser(user);
 
@@ -67,6 +89,7 @@ public class UserController {
                 mapToUserDTO(updatedUser)
         ));
     }
+
 
     @DeleteMapping("/delete/{userId}")
     @Transactional
@@ -92,7 +115,7 @@ public class UserController {
     @Transactional
     public ResponseEntity<ApiResponse> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         String userId = userDetails.getUsername();
-        Users user = userService.getUserByIdWithPhoto(userId);
+        Users user = userService.getUserById(userId);
         return ResponseEntity.ok(new ApiResponse(
                 HttpStatus.OK.value(),
                 "User profile retrieved successfully.",
@@ -100,31 +123,7 @@ public class UserController {
         ));
     }
 
-    @PostMapping("/update-password")
-    @Transactional
-    public ResponseEntity<ApiResponse> updatePassword(
-            @RequestBody UpdatePasswordRequest updatePasswordRequest,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        try {
-            userService.updatePassword(
-                    userId,
-                    updatePasswordRequest.getCurrentPassword(),
-                    updatePasswordRequest.getNewPassword()
-            );
-            return ResponseEntity.ok(new ApiResponse(
-                    HttpStatus.OK.value(),
-                    "Password updated successfully.",
-                    null
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(
-                    HttpStatus.BAD_REQUEST.value(),
-                    e.getMessage(),
-                    null
-            ));
-        }
-    }
+
 
     private UserDTO mapToUserDTO(Users user) {
         UserDTO userDTO = new UserDTO();

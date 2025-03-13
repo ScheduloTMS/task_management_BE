@@ -1,12 +1,11 @@
 package com.taskmanagement.task.Entity;
 
+
 import jakarta.persistence.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Collections;
+
 
 @Entity
 public class Users {
@@ -40,7 +39,4 @@ public class Users {
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-    }
 }
