@@ -65,14 +65,17 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePassword(String userId, String currentPassword, String newPassword) {
+    public boolean validateAndUpdatePassword(String userId, String currentPassword, String newPassword) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+
         if (passwordEncoder.matches(currentPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
-        } else {
-            throw new RuntimeException("Current password is incorrect");
+            return true;
         }
+        return false;
     }
+
 }
