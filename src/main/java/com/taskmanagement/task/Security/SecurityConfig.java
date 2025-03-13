@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/users/create").hasRole("MENTOR")
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
-                        .requestMatchers("/api/users/profile", "/api/users/update-password").authenticated()
+                        .requestMatchers("/api/users/profile").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
