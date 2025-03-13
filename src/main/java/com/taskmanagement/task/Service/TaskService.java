@@ -19,8 +19,13 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-
+    @Transactional
     public TaskEntity createTask(String title, String description, LocalDate dueDate, byte[] file) {
+        List<TaskEntity> existingTasks = taskRepository.findByTitleIgnoreCaseAndDescriptionIgnoreCaseAndDueDate(title, description, dueDate);
+        if (!existingTasks.isEmpty()) {
+            throw new RuntimeException("A task with the same title, description, and due date already exists");
+        }
+
         TaskEntity task = new TaskEntity(title, description, dueDate, file);
         return taskRepository.save(task);
     }

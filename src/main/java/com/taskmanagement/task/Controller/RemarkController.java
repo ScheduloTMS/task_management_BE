@@ -2,6 +2,7 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.DTO.RemarkDTO;
 import com.taskmanagement.task.Service.RemarkService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,33 +22,51 @@ public class RemarkController
 
 
     @GetMapping("tasks/{task_id}/remarks")
-    public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) 
-    {
-        List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
+    public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) {
+        try {
+            List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", 200);
-        response.put("message", "Remarks retrieved successfully");
-        response.put("body", remarks);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 200);
+            response.put("message", "Remarks retrieved successfully");
+            response.put("body", remarks);
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            // Handle task not found or soft-deleted
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", 404);
+            errorResponse.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
     }
+
 
 
     @PostMapping("tasks/{task_id}/remarks")
     public ResponseEntity<Map<String, Object>> addRemark(@PathVariable("task_id") UUID taskId,
                                                          @RequestBody Map<String, String> requestBody) {
-        String userId = requestBody.get("user_id");
-        String comment = requestBody.get("comment");
+        try {
+            String userId = requestBody.get("user_id");
+            String comment = requestBody.get("comment");
 
-        RemarkDTO remark = remarkService.addRemark(taskId, userId, comment);
+            RemarkDTO remark = remarkService.addRemark(taskId, userId, comment);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", 201);
-        response.put("message", "Comment added successfully");
-        response.put("body", remark);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 201);
+            response.put("message", "Comment added successfully");
+            response.put("body", remark);
 
-        return ResponseEntity.status(201).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            // Handle task not found or soft-deleted
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", 404);
+            errorResponse.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
     }
 
 
@@ -59,7 +78,7 @@ public class RemarkController
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
-            response.put("message", "Remark soft-deleted successfully");
+            response.put("message", "Remark deleted successfully");
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {

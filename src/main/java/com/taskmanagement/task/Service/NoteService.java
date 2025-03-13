@@ -4,6 +4,7 @@ import com.taskmanagement.task.Entity.User;
 import com.taskmanagement.task.Repository.NoteRepository;
 import com.taskmanagement.task.Repository.UserRepository;
 import com.taskmanagement.task.Entity.Note;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -21,11 +22,14 @@ public class NoteService
     @Autowired
     private UserRepository userRepository;
 
+
+    @Transactional
     public List<Note> getNotesByUser(String userId) 
     {
         return noteRepository.findByUser_UserIdAndDeletedAtIsNull(userId);
     }
 
+    @Transactional
     public Note saveNoteForUser(String userId, Note note) 
     {
         User user=userRepository.findByUserIdAndDeletedAtIsNull(userId)

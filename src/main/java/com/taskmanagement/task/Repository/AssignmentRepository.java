@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AssignmentRepository extends JpaRepository<AssignmentEntity, AssignmentId> 
+public interface AssignmentRepository extends JpaRepository<AssignmentEntity, AssignmentId>
 {
     Optional<AssignmentEntity> findById(AssignmentId id);
 }

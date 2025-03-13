@@ -31,6 +31,14 @@ public class RemarkService {
 
     @Transactional(readOnly = true)
     public List<RemarkDTO> getAllRemarksForTask(UUID taskId) {
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (task.getDeletedAt() != null) {
+            throw new RuntimeException("Task has been deleted");
+        }
+
+        // Fetch remarks for the task
         List<RemarkEntity> remarks = remarkRepository.findRemarksWithUserDetailsByTaskId(taskId);
 
         return remarks.stream().map(remark -> new RemarkDTO(
@@ -51,12 +59,20 @@ public class RemarkService {
         if (comment == null || comment.trim().isEmpty()) {
             throw new IllegalArgumentException("Comment cannot be null or empty");
         }
+
+        // Fetch the task and check if it is soft-deleted
         TaskEntity task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        User user = userRepository.findByIdWithPhoto(userId)  // ✅ Use findByIdWithPhoto() to fetch photo
+        if (task.getDeletedAt() != null) {
+            throw new RuntimeException("Task has been deleted");
+        }
+
+        // Fetch the user
+        User user = userRepository.findByIdWithPhoto(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Create and save the remark
         RemarkEntity remark = new RemarkEntity(task, user, comment);
         RemarkEntity savedRemark = remarkRepository.save(remark);
 
@@ -71,7 +87,6 @@ public class RemarkService {
                 savedRemark.getDeletedAt()
         );
     }
-
 
     @Transactional
     public void deleteRemark(UUID remarkId, String userId) {

@@ -2,6 +2,7 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.Service.NoteService;
 import com.taskmanagement.task.Entity.Note;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +18,16 @@ public class NoteController
     @Autowired
     private NoteService noteService;
 
+
     @GetMapping("/{userId}")
+    @Transactional
     public ResponseEntity<List<Note>> getUserNotes(@PathVariable String userId) 
     {
         return ResponseEntity.ok(noteService.getNotesByUser(userId));
     }
 
     @PostMapping("/{userId}")
+    @Transactional
     public ResponseEntity<Note> createNote(@PathVariable String userId, @RequestBody Note note) {
         return ResponseEntity.ok(noteService.saveNoteForUser(userId, note));
     }

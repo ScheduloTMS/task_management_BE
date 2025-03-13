@@ -19,11 +19,13 @@ public class AssignmentEntity {
     private byte[] fileUploads;
     private String submissionStatus;
     private LocalDateTime submittedAt;
+
+    @Column(nullable = true)
     private String score;
 
 
     public AssignmentEntity(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score)
-     {
+    {
         this.id = new AssignmentId(taskId, userId);
         this.fileUploads = fileUploads;
         this.submissionStatus = submissionStatus;

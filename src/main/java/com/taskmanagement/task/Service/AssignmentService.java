@@ -13,25 +13,25 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class AssignmentService 
+public class AssignmentService
 {
     private final AssignmentRepository assignmentRepository;
 
-    public AssignmentService(AssignmentRepository assignmentRepository) 
+    public AssignmentService(AssignmentRepository assignmentRepository)
     {
         this.assignmentRepository = assignmentRepository;
     }
 
     // Post
     @Transactional
-    public void saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score) 
+    public void saveAssignment(UUID taskId, String userId, byte[] file, String submissionStatus, String score)
     {
         AssignmentEntity assignment = new AssignmentEntity(taskId, userId, file, submissionStatus, score);
         assignmentRepository.save(assignment);
     }
 
     // Get
-    public Optional<AssignmentEntity> getAssignmentByUserAndTask(String userId, UUID taskId) 
+    public Optional<AssignmentEntity> getAssignmentByUserAndTask(String userId, UUID taskId)
     {
         AssignmentId id = new AssignmentId(taskId, userId);
         return assignmentRepository.findById(id);
@@ -43,13 +43,13 @@ public class AssignmentService
         AssignmentId id = new AssignmentId(taskId, userId);
         AssignmentEntity assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
-    
+
         assignment.setFileUploads(file);
         assignment.setSubmissionStatus(submissionStatus);
         assignment.setSubmittedAt(LocalDateTime.now());
         assignment.setScore(score);
-    
+
         return assignmentRepository.save(assignment);
     }
-    
+
 }

@@ -2,6 +2,7 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.Entity.TaskEntity;
 import com.taskmanagement.task.Service.TaskService;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +27,9 @@ public class TaskController {
 
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> createTask(
-            @RequestParam String title,
-            @RequestParam String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
+            @RequestParam @NotNull(message = "Title cannot be null") String title,
+            @RequestParam @NotNull(message = "Description cannot be null") String description,
+            @RequestParam @NotNull(message = "Due date cannot be null") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
             @RequestParam(required = false) MultipartFile file) {
 
         try {
@@ -42,7 +43,12 @@ public class TaskController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Error processing file"));
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", 400);
+            errorResponse.put("message", "Error processing file");
+            errorResponse.put("body", null);
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
 
@@ -64,46 +70,99 @@ public class TaskController {
     public ResponseEntity<Map<String, Object>> getTaskById(@PathVariable UUID task_id) {
         Optional<TaskEntity> task = taskService.getTaskById(task_id);
         if (task.isPresent()) {
+
+            if (task.get().getDeletedAt() != null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("status", 404);
+                errorResponse.put("message", "Task has been deleted");
+                errorResponse.put("body", null);
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "Successfully retrieved task details");
             response.put("body", task.get());
+
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Task not found"));
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", 404);
+        errorResponse.put("message", "Task not found");
+        errorResponse.put("body", null);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
 
     @PutMapping(value = "/{task_id}", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> updateTask(
             @PathVariable UUID task_id,
-            @RequestParam String title,
-            @RequestParam String description,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
+            @RequestParam @NotNull(message = "Title cannot be null") String title,
+            @RequestParam @NotNull(message = "Description cannot be null") String description,
+            @RequestParam @NotNull(message = "Due date cannot be null") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
             @RequestParam(required = false) MultipartFile file) {
 
-        try {
-            byte[] fileData = (file != null) ? file.getBytes() : null;
-            TaskEntity updatedTask = taskService.updateTask(task_id, title, description, due_date, fileData);
+        Optional<TaskEntity> existingTask = taskService.getTaskById(task_id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", 200);
-            response.put("message", "Task updated successfully");
-            response.put("body", updatedTask);
+        if (existingTask.isPresent()) {
 
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Error processing file"));
+            if (existingTask.get().getDeletedAt() != null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("status", 404);
+                errorResponse.put("message", "Task has been deleted");
+                errorResponse.put("body", null);
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+
+            try {
+                byte[] fileData = (file != null) ? file.getBytes() : null;
+                TaskEntity updatedTask = taskService.updateTask(task_id, title, description, due_date, fileData);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", 200);
+                response.put("message", "Task updated successfully");
+                response.put("body", updatedTask);
+
+                return ResponseEntity.ok(response);
+            } catch (IOException e) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("status", 400);
+                errorResponse.put("message", "Error processing file");
+                errorResponse.put("body", null);
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
         }
-    }
 
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", 404);
+        errorResponse.put("message", "Task not found");
+        errorResponse.put("body", null);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
 
     @DeleteMapping("/{task_id}")
     public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable UUID task_id) {
         boolean deleted = taskService.deleteTask(task_id);
         if (deleted) {
-            return ResponseEntity.ok(Map.of("message", "Task deleted successfully"));
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 200);
+            response.put("message", "Task deleted successfully");
+            response.put("body", null);
+
+            return ResponseEntity.ok(response);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Task not found"));
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", 404);
+        errorResponse.put("message", "Task not found");
+        errorResponse.put("body", null);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 }

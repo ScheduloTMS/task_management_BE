@@ -1,6 +1,7 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -10,7 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tasks")
 @Data
-
+@NoArgsConstructor
 @AllArgsConstructor
 public class TaskEntity 
 {
@@ -18,9 +19,15 @@ public class TaskEntity
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID taskId;
 
+    @NotNull(message = "Title cannot be null")
     private String title;
+
+    @NotNull(message = "Description cannot be null")
     private String description;
+
     private LocalDate createdAt;
+
+    @NotNull(message = "Due date cannot be null")
     private LocalDate dueDate;
 
     @Lob
