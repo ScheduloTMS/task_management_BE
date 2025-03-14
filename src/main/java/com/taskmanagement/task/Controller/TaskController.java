@@ -36,14 +36,14 @@ public class TaskController {
             byte[] fileData = (file != null) ? file.getBytes() : null;
             TaskEntity createdTask = taskService.createTask(title, description, due_date, fileData);
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 201);
             response.put("message", "Task created successfully");
             response.put("body", createdTask);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IOException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("status", 400);
             errorResponse.put("message", "Error processing file");
             errorResponse.put("body", null);
@@ -57,7 +57,7 @@ public class TaskController {
     public ResponseEntity<Map<String, Object>> getAllTasks() {
         List<TaskEntity> tasks = taskService.getAllTasks();
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", 200);
         response.put("message", "Successfully retrieved the list of tasks");
         response.put("body", tasks);
@@ -72,7 +72,7 @@ public class TaskController {
         if (task.isPresent()) {
 
             if (task.get().getDeletedAt() != null) {
-                Map<String, Object> errorResponse = new HashMap<>();
+                Map<String, Object> errorResponse = new LinkedHashMap<>();
                 errorResponse.put("status", 404);
                 errorResponse.put("message", "Task has been deleted");
                 errorResponse.put("body", null);
@@ -80,7 +80,7 @@ public class TaskController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 200);
             response.put("message", "Successfully retrieved task details");
             response.put("body", task.get());
@@ -88,7 +88,7 @@ public class TaskController {
             return ResponseEntity.ok(response);
         }
 
-        Map<String, Object> errorResponse = new HashMap<>();
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
         errorResponse.put("status", 404);
         errorResponse.put("message", "Task not found");
         errorResponse.put("body", null);
@@ -110,7 +110,7 @@ public class TaskController {
         if (existingTask.isPresent()) {
 
             if (existingTask.get().getDeletedAt() != null) {
-                Map<String, Object> errorResponse = new HashMap<>();
+                Map<String, Object> errorResponse = new LinkedHashMap<>();
                 errorResponse.put("status", 404);
                 errorResponse.put("message", "Task has been deleted");
                 errorResponse.put("body", null);
@@ -122,14 +122,14 @@ public class TaskController {
                 byte[] fileData = (file != null) ? file.getBytes() : null;
                 TaskEntity updatedTask = taskService.updateTask(task_id, title, description, due_date, fileData);
 
-                Map<String, Object> response = new HashMap<>();
+                Map<String, Object> response = new LinkedHashMap<>();
                 response.put("status", 200);
                 response.put("message", "Task updated successfully");
                 response.put("body", updatedTask);
 
                 return ResponseEntity.ok(response);
             } catch (IOException e) {
-                Map<String, Object> errorResponse = new HashMap<>();
+                Map<String, Object> errorResponse = new LinkedHashMap<>();
                 errorResponse.put("status", 400);
                 errorResponse.put("message", "Error processing file");
                 errorResponse.put("body", null);
@@ -138,7 +138,7 @@ public class TaskController {
             }
         }
 
-        Map<String, Object> errorResponse = new HashMap<>();
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
         errorResponse.put("status", 404);
         errorResponse.put("message", "Task not found");
         errorResponse.put("body", null);
@@ -150,7 +150,7 @@ public class TaskController {
     public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable UUID task_id) {
         boolean deleted = taskService.deleteTask(task_id);
         if (deleted) {
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 200);
             response.put("message", "Task deleted successfully");
             response.put("body", null);
@@ -158,7 +158,7 @@ public class TaskController {
             return ResponseEntity.ok(response);
         }
 
-        Map<String, Object> errorResponse = new HashMap<>();
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
         errorResponse.put("status", 404);
         errorResponse.put("message", "Task not found");
         errorResponse.put("body", null);

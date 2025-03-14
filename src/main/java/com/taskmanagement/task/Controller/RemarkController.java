@@ -26,7 +26,7 @@ public class RemarkController
         try {
             List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 200);
             response.put("message", "Remarks retrieved successfully");
             response.put("body", remarks);
@@ -34,7 +34,7 @@ public class RemarkController
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             // Handle task not found or soft-deleted
-            Map<String, Object> errorResponse = new HashMap<>();
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("status", 404);
             errorResponse.put("message", e.getMessage());
 
@@ -53,7 +53,7 @@ public class RemarkController
 
             RemarkDTO remark = remarkService.addRemark(taskId, userId, comment);
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 201);
             response.put("message", "Comment added successfully");
             response.put("body", remark);
@@ -61,7 +61,7 @@ public class RemarkController
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             // Handle task not found or soft-deleted
-            Map<String, Object> errorResponse = new HashMap<>();
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("status", 404);
             errorResponse.put("message", e.getMessage());
 
@@ -76,13 +76,13 @@ public class RemarkController
         try {
             remarkService.deleteRemark(remarkId, userId);
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", 200);
             response.put("message", "Remark deleted successfully");
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("status", 403);
             errorResponse.put("message", e.getMessage());
 
