@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/assignments")
+@RequestMapping("/api/assignments")
 public class AssignmentController 
 {
     @Autowired
