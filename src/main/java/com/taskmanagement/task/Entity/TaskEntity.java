@@ -25,10 +25,11 @@ public class TaskEntity {
     private LocalDate dueDate;
 
     @Lob
-    @Column(columnDefinition = "BYTEA")
     private byte[] file;
 
     private LocalDateTime deletedAt;
+
+    private String createdBy;
 
 
     public UUID getTaskId() { return taskId; }
@@ -51,6 +52,9 @@ public class TaskEntity {
 
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
     @PrePersist
     protected void onCreate() {
