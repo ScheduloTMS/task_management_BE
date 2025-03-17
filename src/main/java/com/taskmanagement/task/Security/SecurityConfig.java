@@ -3,6 +3,7 @@ package com.taskmanagement.task.Security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,6 +30,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/create").hasRole("MENTOR")
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
                         .requestMatchers("/api/users/profile").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/tasks").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/tasks/**").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/tasks/**").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/tasks/{task_id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/tasks/profile").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
