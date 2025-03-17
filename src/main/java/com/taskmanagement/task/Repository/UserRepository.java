@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<Users, String> {
@@ -15,5 +16,8 @@ public interface UserRepository extends JpaRepository<Users, String> {
 
     @Query("SELECT u.userId FROM Users u WHERE u.userId LIKE :rolePrefix% ORDER BY u.userId DESC LIMIT 1")
     String findLastUserIdByRole(@Param("rolePrefix") String rolePrefix);
+
+    @Query("SELECT u FROM Users u WHERE u.deletedAt IS NULL")
+    List<Users> findAllActiveUsers();
 
 }
