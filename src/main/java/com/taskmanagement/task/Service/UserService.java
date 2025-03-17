@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 
 @Service
@@ -76,6 +77,11 @@ public class UserService {
             return true;
         }
         return false;
+    }
+
+    @Transactional
+    public List<Users> getAllUsers() {
+        return userRepository.findAllActiveUsers();
     }
 
 }
