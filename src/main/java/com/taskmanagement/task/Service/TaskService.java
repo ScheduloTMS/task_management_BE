@@ -1,6 +1,5 @@
 package com.taskmanagement.task.Service;
 
-import com.taskmanagement.task.DTO.TaskDTO;
 import com.taskmanagement.task.Entity.TaskEntity;
 import com.taskmanagement.task.Repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +17,23 @@ public class TaskService {
     private TaskRepository taskRepository;
 
     @Transactional
-    public TaskEntity createTask(TaskDTO taskDTO) {
+    public TaskEntity createTask(String title, String description, LocalDate dueDate, byte[] fileData, String createdBy) {
         TaskEntity task = new TaskEntity();
-        task.setTitle(taskDTO.getTitle());
-        task.setDescription(taskDTO.getDescription());
-        task.setDueDate(taskDTO.getDueDate());
-        task.setFile(taskDTO.getFile());
+        task.setTitle(title);
+        task.setDescription(description);
+        task.setDueDate(dueDate);
+        task.setFile(fileData);
+        task.setCreatedBy(createdBy);
         return taskRepository.save(task);
     }
 
-    public List<TaskEntity> getAllTasks() {
-        return taskRepository.findByDeletedAtIsNull();
+    public List<TaskEntity> getAllTasksForUser(String username) {
+        return taskRepository.findByCreatedByAndDeletedAtIsNull(username);
+    }
+
+    public TaskEntity getTaskByIdForUser(UUID taskId, String username) {
+        return taskRepository.findByTaskIdAndCreatedBy(taskId, username)
+                .orElseThrow(() -> new RuntimeException("Task not found or unauthorized"));
     }
 
     public TaskEntity getTaskById(UUID taskId) {
@@ -37,20 +42,20 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskEntity updateTask(UUID taskId, TaskDTO taskDTO) {
-        TaskEntity task = getTaskById(taskId);
-        task.setTitle(taskDTO.getTitle());
-        task.setDescription(taskDTO.getDescription());
-        task.setDueDate(taskDTO.getDueDate());
-        if (taskDTO.getFile() != null) {
-            task.setFile(taskDTO.getFile());
+    public TaskEntity updateTask(UUID taskId, String title, String description, LocalDate dueDate, byte[] fileData, String username) {
+        TaskEntity task = getTaskByIdForUser(taskId, username);
+        task.setTitle(title);
+        task.setDescription(description);
+        task.setDueDate(dueDate);
+        if (fileData != null) {
+            task.setFile(fileData);
         }
         return taskRepository.save(task);
     }
 
     @Transactional
-    public void deleteTask(UUID taskId) {
-        TaskEntity task = getTaskById(taskId);
+    public void deleteTask(UUID taskId, String username) {
+        TaskEntity task = getTaskByIdForUser(taskId, username);
         task.setDeletedAt(java.time.LocalDateTime.now());
         taskRepository.save(task);
     }
