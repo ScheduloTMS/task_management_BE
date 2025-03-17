@@ -2,6 +2,7 @@ package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Service.AssignmentService;
+import com.taskmanagement.task.DTO.StudentAssignmentRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,8 +38,17 @@ public class AssignmentController
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("Error processing file: " + e.getMessage());
     }
-}
+    }
 
+    @PostMapping("/{taskId}/assign")
+    public ResponseEntity<?> assignStudents(
+                        @PathVariable UUID taskId,
+                        @RequestBody StudentAssignmentRequest request) 
+    {
+
+        assignmentService.assignStudents(taskId, request.getStudentIds());
+        return ResponseEntity.ok("Students assigned to task successfully");
+    }
 
     @GetMapping("/{userId}/{taskId}")
     public ResponseEntity<AssignmentEntity> getAssignment(@PathVariable String userId,@PathVariable UUID taskId) 
@@ -57,6 +67,7 @@ public class AssignmentController
         {
             byte[] fileData = (file != null) ? file.getBytes() : null;
             String submissionStatus="Reviewed";
+                
             assignmentService.updateAssignment(taskId, userId, fileData, submissionStatus, score);
             return ResponseEntity.ok("Assignment updated successfully");
         } 

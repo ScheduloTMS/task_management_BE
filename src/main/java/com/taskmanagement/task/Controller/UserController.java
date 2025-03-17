@@ -18,12 +18,14 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService) 
+    {
         this.userService = userService;
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllUsers() {
+    public ResponseEntity<Map<String, Object>> getAllUsers()
+    {
         List<UserDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(Map.of(
                 "status", 200,

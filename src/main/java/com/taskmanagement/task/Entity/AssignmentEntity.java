@@ -10,7 +10,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @Table(name = "assignments")
-public class AssignmentEntity {
+public class AssignmentEntity 
+{
 
     @EmbeddedId
     private AssignmentId id;
@@ -19,6 +20,7 @@ public class AssignmentEntity {
     private byte[] fileUploads;
     private String submissionStatus;
     private LocalDateTime submittedAt;
+    private LocalDateTime updatedAt;
 
     @Column(nullable = true) 
     private String score;
@@ -31,5 +33,12 @@ public class AssignmentEntity {
         this.submissionStatus = submissionStatus;
         this.submittedAt = LocalDateTime.now();
         this.score = score;
+        this.updatedAt=null;
+    }
+
+    public void updatedAt()
+    {
+        this.updatedAt=LocalDateTime.now();
     }
 }
+
