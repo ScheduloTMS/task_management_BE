@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -123,6 +125,20 @@ public class UserController {
         ));
     }
 
+    @GetMapping
+    @Transactional
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        List<Users> users = userService.getAllUsers();
+        List<UserDTO> userDTOs = users.stream()
+                .map(this::mapToUserDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse(
+                HttpStatus.OK.value(),
+                "All users retrieved successfully.",
+                userDTOs
+        ));
+    }
 
 
     private UserDTO mapToUserDTO(Users user) {
