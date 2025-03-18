@@ -12,8 +12,8 @@ import java.util.UUID;
 @Builder
 public class MessageDTO {
     private UUID msgId;
-    private String senderId; // Ensure this is String
-    private String receiverId; // Ensure this is String
+    private String senderId;
+    private String receiverId;
     private String content;
     private Long attachment;
     private LocalDateTime sendAt;

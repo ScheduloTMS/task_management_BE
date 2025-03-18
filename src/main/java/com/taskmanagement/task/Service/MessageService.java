@@ -25,13 +25,13 @@ public class MessageService {
 
     public MessageDTO sendMessage(MessageDTO messageDTO) {
         try {
-            // Fetch sender and receiver from the database
+
             User sender = userRepository.findById(messageDTO.getSenderId())
                     .orElseThrow(() -> new RuntimeException("Sender not found"));
             User receiver = userRepository.findById(messageDTO.getReceiverId())
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-            // Create and save the message
+
             MessageEntity message = MessageEntity.builder()
                     .sender(sender)
                     .receiver(receiver)
@@ -39,11 +39,11 @@ public class MessageService {
                     .attachment(messageDTO.getAttachment())
                     .sendAt(LocalDateTime.now())
                     .read(false)
-                    .delivered(false) // Initially not delivered
+                    .delivered(false)
                     .build();
             messageRepository.save(message);
 
-            // Send the message to the recipient via WebSocket
+
             String destination = "/user/" + messageDTO.getReceiverId() + "/queue/messages";
             messagingTemplate.convertAndSend(destination, MessageDTO.builder()
                     .msgId(message.getMsgId())
@@ -51,16 +51,16 @@ public class MessageService {
                     .receiverId(receiver.getUserId())
                     .content(message.getContent())
                     .attachment(message.getAttachment())
-                    .delivered(false) // Initially not delivered
-                    .read(false) // Initially not read
+                    .delivered(false)
+                    .read(false)
                     .sendAt(message.getSendAt())
                     .build());
 
-            // Mark as delivered after sending
+
             message.setDelivered(true);
             messageRepository.save(message);
 
-            // Return the saved message as a DTO
+
             return MessageDTO.builder()
                     .msgId(message.getMsgId())
                     .senderId(sender.getUserId())
@@ -80,10 +80,10 @@ public class MessageService {
         try {
             MessageEntity message = messageRepository.findById(messageId)
                     .orElseThrow(() -> new RuntimeException("Message not found"));
-            message.setRead(true); // Mark as read
+            message.setRead(true);
             messageRepository.save(message);
 
-            // Notify the sender that the message has been read
+
             String destination = "/user/" + message.getSender().getUserId() + "/queue/messages";
             messagingTemplate.convertAndSend(destination, MessageDTO.builder()
                     .msgId(message.getMsgId())
@@ -91,7 +91,7 @@ public class MessageService {
                     .receiverId(message.getReceiver().getUserId())
                     .content(message.getContent())
                     .delivered(message.isDelivered())
-                    .read(message.isRead()) // Include updated read status
+                    .read(message.isRead())
                     .sendAt(message.getSendAt())
                     .build());
         } catch (Exception e) {
