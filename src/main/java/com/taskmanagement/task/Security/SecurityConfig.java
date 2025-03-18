@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/assignments/{taskId}").authenticated()
                         .requestMatchers("/api/remarks/tasks/{taskId}").authenticated()
                         .requestMatchers("/api/remarks/{remarkId}").authenticated()
+                        .requestMatchers("/api/notes/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
