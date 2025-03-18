@@ -25,7 +25,7 @@ public class RemarkEntity {
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
 
-    // Constructors
+
     public RemarkEntity() {}
 
     public RemarkEntity(AssignmentEntity assignment, String comment) {
@@ -34,7 +34,7 @@ public class RemarkEntity {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+
     public UUID getRemarkId() { return remarkId; }
     public void setRemarkId(UUID remarkId) { this.remarkId = remarkId; }
 
