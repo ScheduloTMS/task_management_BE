@@ -6,6 +6,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Controller;
 
+import java.util.UUID;
+
 @Controller
 public class MessageController {
 
@@ -18,5 +20,9 @@ public class MessageController {
     @MessageMapping("/chat")
     public void sendMessage(@Payload MessageDTO messageDTO) {
         messageService.sendMessage(messageDTO);
+    }
+    @MessageMapping("/markAsRead")
+    public void markAsRead(@Payload UUID messageId) {
+        messageService.markAsRead(messageId);
     }
 }

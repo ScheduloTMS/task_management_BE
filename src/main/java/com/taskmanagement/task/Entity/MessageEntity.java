@@ -34,6 +34,9 @@ public class MessageEntity {
     @Column(nullable = false)
     private boolean read = false;
 
+    @Column(nullable = false)
+    private boolean delivered = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime sendAt = LocalDateTime.now();
 }

@@ -18,4 +18,5 @@ public class MessageDTO {
     private Long attachment;
     private LocalDateTime sendAt;
     private boolean read;
+    private boolean delivered;
 }
