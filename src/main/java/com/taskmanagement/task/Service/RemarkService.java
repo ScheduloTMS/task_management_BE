@@ -35,8 +35,8 @@ public class RemarkService {
 
         return remarks.stream().map(remark -> new RemarkDTO(
                 remark.getRemarkId(),
-                remark.getAssignment().getId().getTaskId(), // Access taskId from AssignmentId
-                remark.getAssignment().getId().getUserId(), // Access userId from AssignmentId
+                remark.getAssignment().getId().getTaskId(),
+                remark.getAssignment().getId().getUserId(),
                 remark.getComment(),
                 remark.getCreatedAt(),
                 remark.getDeletedAt()
