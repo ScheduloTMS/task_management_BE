@@ -20,28 +20,35 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
     @Autowired
     private UserService userService;
 
-    @PostMapping("/create")
+
+    @PostMapping
     @Transactional
-    public ResponseEntity<ApiResponse> createUser(@RequestBody UserDTO userDTO, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse> createUser(@RequestBody UserDTO userDTO,
+                                                  @AuthenticationPrincipal UserDetails userDetails) {
         Users currentUser = userService.getUserById(userDetails.getUsername());
-        if (currentUser.getRole().equals("MENTOR")) {
-            Users createdUser = userService.createUser(userDTO);
-            return ResponseEntity.ok(new ApiResponse(
-                    HttpStatus.OK.value(),
-                    "User created successfully with default password.",
-                    mapToUserDTO(createdUser)
-            ));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(
-                    HttpStatus.FORBIDDEN.value(),
-                    "Only mentors can create users.",
-                    null
-            ));
+        if (!"MENTOR".equals(currentUser.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    new ApiResponse("error", 403, "Only mentors can create users.", null)
+            );
         }
+
+
+        if (userService.isUserExists(userDTO.getUserId(), userDTO.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    new ApiResponse("error", 409, "User with same ID or email already exists.", null)
+            );
+        }
+
+        Users createdUser = userService.createUser(userDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new ApiResponse("success", 201, "User created successfully.", mapToUserDTO(createdUser))
+        );
     }
+
 
     @PutMapping("/profile")
     @Transactional
@@ -50,93 +57,84 @@ public class UserController {
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam(value = "currentPassword", required = false) String currentPassword,
             @RequestParam(value = "newPassword", required = false) String newPassword,
-            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestHeader("Authorization") String token) throws IOException {
 
         String currentUserId = userDetails.getUsername();
-        Users user = userService.getUserById(currentUserId);
 
 
         if (email != null && !email.isEmpty()) {
+            Users user = userService.getUserById(currentUserId);
             user.setEmail(email);
+            userService.updateUser(user);
         }
 
 
-        if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getBytes());
-        }
+        if ((currentPassword != null && newPassword != null) || (photo != null && !photo.isEmpty())) {
+            boolean isUpdated = userService.validateAndUpdatePassword(
+                    currentUserId, currentPassword, newPassword, token.replace("Bearer ", ""), photo);
 
-
-        if (currentPassword != null && newPassword != null) {
-            if (userService.validateAndUpdatePassword(currentUserId, currentPassword, newPassword)) {
+            if (isUpdated) {
                 return ResponseEntity.ok(new ApiResponse(
-                        HttpStatus.OK.value(),
-                        "Profile and password updated successfully.",
-                        mapToUserDTO(user)
+                        "success", 200, "Profile updated successfully.", null
                 ));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(
-                        HttpStatus.BAD_REQUEST.value(),
-                        "Current password is incorrect.",
-                        null
+                        "error", 400, "Current password is incorrect.", null
                 ));
             }
         }
 
-
-        Users updatedUser = userService.updateUser(user);
-
         return ResponseEntity.ok(new ApiResponse(
-                HttpStatus.OK.value(),
-                "Profile updated successfully.",
-                mapToUserDTO(updatedUser)
+                "success", 200, "Profile updated successfully.", null
         ));
     }
 
-
-    @DeleteMapping("/delete/{userId}")
+    @DeleteMapping("/{userId}")
     @Transactional
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable String userId, @AuthenticationPrincipal UserDetails userDetails) {
-        Users currentUser = userService.getUserById(userDetails.getUsername());
-        if (currentUser.getRole().equals("MENTOR")) {
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable String userId,
+                                                  @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Users currentUser = userService.getUserById(userDetails.getUsername());
+            if (!"MENTOR".equals(currentUser.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                        new ApiResponse("error", 403, "Only mentors can delete users.", null)
+                );
+            }
+
             userService.deleteUser(userId);
             return ResponseEntity.ok(new ApiResponse(
-                    HttpStatus.OK.value(),
-                    "User deleted successfully.",
-                    null
+                    "success", 200, "User deleted successfully.", null
             ));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(
-                    HttpStatus.FORBIDDEN.value(),
-                    "Only mentors can delete users.",
-                    null
-            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ApiResponse("error", 500, e.getMessage(), null)
+            );
         }
     }
+
+
+
 
     @GetMapping("/profile")
     @Transactional
     public ResponseEntity<ApiResponse> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        Users user = userService.getUserById(userId);
+        Users user = userService.getUserById(userDetails.getUsername());
         return ResponseEntity.ok(new ApiResponse(
-                HttpStatus.OK.value(),
-                "User profile retrieved successfully.",
-                mapToUserDTO(user)
+                "success", 200, "User profile retrieved successfully.", mapToUserDTO(user)
         ));
     }
+
 
     @GetMapping
     @Transactional
     public ResponseEntity<ApiResponse> getAllUsers() {
-        List<Users> users = userService.getAllUsers();
-        List<UserDTO> userDTOs = users.stream()
+        List<UserDTO> userDTOs = userService.getAllUsers().stream()
                 .map(this::mapToUserDTO)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiResponse(
-                HttpStatus.OK.value(),
-                "All users retrieved successfully.",
-                userDTOs
+                "success", 200, "All users retrieved successfully.", userDTOs
         ));
     }
 
@@ -145,8 +143,8 @@ public class UserController {
         UserDTO userDTO = new UserDTO();
         userDTO.setUserId(user.getUserId());
         userDTO.setName(user.getName());
-        userDTO.setRole(user.getRole());
         userDTO.setEmail(user.getEmail());
+        userDTO.setRole(user.getRole());
         userDTO.setPhoto(user.getPhoto());
         return userDTO;
     }

@@ -14,26 +14,26 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/remarks")
+@RequestMapping("/api")
 public class RemarkController {
 
     @Autowired
     private RemarkService remarkService;
 
-    @GetMapping("/tasks/{taskId}")
+    @GetMapping("/tasks/{taskId}/remarks")
     public ResponseEntity<ApiResponse> getRemarksForAssignment(
             @PathVariable UUID taskId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             List<RemarkDTO> remarks = remarkService.getRemarksForAssignment(taskId, userDetails.getUsername());
-            return ResponseEntity.ok(new ApiResponse(200, "Remarks retrieved successfully", remarks));
+            return ResponseEntity.ok(new ApiResponse("success",200, "Remarks retrieved successfully", remarks));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse(403, e.getMessage(), null));
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 
-    @PostMapping("/tasks/{taskId}")
+    @PostMapping("/tasks/{taskId}/remarks")
     public ResponseEntity<ApiResponse> addRemark(
             @PathVariable UUID taskId,
             @RequestParam String comment,
@@ -41,23 +41,23 @@ public class RemarkController {
         try {
             RemarkDTO remark = remarkService.addRemark(taskId, userDetails.getUsername(), comment);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ApiResponse(201, "Comment added successfully", remark));
+                    .body(new ApiResponse("success",201, "Comment added successfully", remark));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse(403, e.getMessage(), null));
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 
-    @DeleteMapping("/{remarkId}")
+    @DeleteMapping("/remarks/{remarkId}")
     public ResponseEntity<ApiResponse> deleteRemark(
             @PathVariable UUID remarkId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             remarkService.deleteRemark(remarkId, userDetails.getUsername());
-            return ResponseEntity.ok(new ApiResponse(200, "Remark deleted successfully", null));
+            return ResponseEntity.ok(new ApiResponse("success",200, "Remark deleted successfully", null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse(403, e.getMessage(), null));
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 }
