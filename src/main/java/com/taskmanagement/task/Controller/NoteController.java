@@ -20,7 +20,7 @@ public class NoteController {
 
     @GetMapping
     public List<NoteDTO> getUserNotes(@AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername(); // Extract userId from JWT
+        String userId = userDetails.getUsername();
         return noteService.getNotesByUser(userId);
     }
 
@@ -37,7 +37,7 @@ public class NoteController {
             @PathVariable UUID noteId,
             @RequestBody NoteDTO noteDTO,
             @AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername(); // Extract userId from JWT
+        String userId = userDetails.getUsername();
         return ResponseEntity.ok(noteService.updateUserNote(userId, noteId, noteDTO));
     }
 
