@@ -1,6 +1,9 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,6 +22,15 @@ public class AssignmentEntity {
 
     @Column(nullable = true)
     private String score;
+
+    @Column(nullable = true)
+    private LocalDateTime deletedAt;
+
+    @ManyToOne
+    @JoinColumn(insertable = false, updatable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private TaskEntity task;
+
 
 
     public AssignmentEntity() {}
@@ -47,6 +59,9 @@ public class AssignmentEntity {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 
     public String getScore() { return score; }
     public void setScore(String score) { this.score = score; }
