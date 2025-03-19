@@ -19,17 +19,13 @@ public class MessageController {
         this.messageService = messageService;
     }
 
-    /**
-     * Handles sending messages via WebSocket.
-     */
+
     @MessageMapping("/chat")
     public void sendMessage(@Payload MessageDTO messageDTO) {
         messageService.sendMessage(messageDTO);
     }
 
-    /**
-     * Fetches chat history between two users.
-     */
+
     @GetMapping("/api/messages")
     public List<MessageDTO> getMessagesBetweenUsers(
             @RequestParam String senderId,

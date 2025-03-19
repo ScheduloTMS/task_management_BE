@@ -11,10 +11,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class MessageDTO {
-    private UUID msgId; // Unique identifier for the message
-    private String senderId; // ID of the sender
-    private String receiverId; // ID of the receiver
-    private String content; // Content of the message
-    private Long attachment; // Optional attachment (e.g., file ID)
-    private LocalDateTime sendAt; // Timestamp when the message was sent
+    private UUID msgId;
+    private String senderId;
+    private String receiverId;
+    private String content;
+    private Long attachment;
+    private LocalDateTime sendAt;
 }

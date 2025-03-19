@@ -25,18 +25,16 @@ public class MessageService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    /**
-     * Sends a message and broadcasts it to both the sender and receiver.
-     */
+
     public MessageDTO sendMessage(MessageDTO messageDTO) {
         try {
-            // Validate sender and receiver
+
             User sender = userRepository.findById(messageDTO.getSenderId())
                     .orElseThrow(() -> new RuntimeException("Sender not found"));
             User receiver = userRepository.findById(messageDTO.getReceiverId())
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-            // Save the message to the database
+
             MessageEntity message = MessageEntity.builder()
                     .sender(sender)
                     .receiver(receiver)
@@ -46,14 +44,14 @@ public class MessageService {
                     .build();
             messageRepository.save(message);
 
-            // Convert the saved entity to DTO for broadcasting
+
             MessageDTO savedMessageDTO = convertToDTO(message);
 
-            // Broadcast the message to the receiver
+
             String receiverDestination = "/user/" + receiver.getUserId() + "/queue/messages";
             messagingTemplate.convertAndSend(receiverDestination, savedMessageDTO);
 
-            // Broadcast the message to the sender
+
             String senderDestination = "/user/" + sender.getUserId() + "/queue/messages";
             messagingTemplate.convertAndSend(senderDestination, savedMessageDTO);
 
@@ -63,19 +61,17 @@ public class MessageService {
         }
     }
 
-    /**
-     * Fetches messages between two users.
-     */
+
     public List<MessageDTO> getMessagesBetweenUsers(String senderId, String receiverId) {
         try {
-            // Fetch messages where the sender and receiver are involved
+
             List<MessageEntity> messages = messageRepository.findBySenderUserIdAndReceiverUserId(senderId, receiverId);
             messages.addAll(messageRepository.findBySenderUserIdAndReceiverUserId(receiverId, senderId));
 
-            // Sort messages by timestamp (oldest first)
+
             messages.sort((m1, m2) -> m1.getSendAt().compareTo(m2.getSendAt()));
 
-            // Convert entities to DTOs
+
             return messages.stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
@@ -84,9 +80,7 @@ public class MessageService {
         }
     }
 
-    /**
-     * Converts a MessageEntity to a MessageDTO.
-     */
+
     private MessageDTO convertToDTO(MessageEntity message) {
         return MessageDTO.builder()
                 .msgId(message.getMsgId())
