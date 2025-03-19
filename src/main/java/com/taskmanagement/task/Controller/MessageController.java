@@ -4,11 +4,13 @@ import com.taskmanagement.task.DTO.MessageDTO;
 import com.taskmanagement.task.Service.MessageService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
+import java.util.List;
 
-@Controller
+@RestController
 public class MessageController {
 
     private final MessageService messageService;
@@ -17,12 +19,21 @@ public class MessageController {
         this.messageService = messageService;
     }
 
+    /**
+     * Handles sending messages via WebSocket.
+     */
     @MessageMapping("/chat")
     public void sendMessage(@Payload MessageDTO messageDTO) {
         messageService.sendMessage(messageDTO);
     }
-    @MessageMapping("/markAsRead")
-    public void markAsRead(@Payload UUID messageId) {
-        messageService.markAsRead(messageId);
+
+    /**
+     * Fetches chat history between two users.
+     */
+    @GetMapping("/api/messages")
+    public List<MessageDTO> getMessagesBetweenUsers(
+            @RequestParam String senderId,
+            @RequestParam String receiverId) {
+        return messageService.getMessagesBetweenUsers(senderId, receiverId);
     }
 }

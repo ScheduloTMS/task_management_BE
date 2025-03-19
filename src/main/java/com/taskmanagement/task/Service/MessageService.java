@@ -8,7 +8,9 @@ import com.taskmanagement.task.Entity.User;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
+
+import java.util.stream.Collectors;
 
 @Service
 public class MessageService {
@@ -23,79 +25,76 @@ public class MessageService {
         this.messagingTemplate = messagingTemplate;
     }
 
+    /**
+     * Sends a message and broadcasts it to both the sender and receiver.
+     */
     public MessageDTO sendMessage(MessageDTO messageDTO) {
         try {
-
+            // Validate sender and receiver
             User sender = userRepository.findById(messageDTO.getSenderId())
                     .orElseThrow(() -> new RuntimeException("Sender not found"));
             User receiver = userRepository.findById(messageDTO.getReceiverId())
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-
+            // Save the message to the database
             MessageEntity message = MessageEntity.builder()
                     .sender(sender)
                     .receiver(receiver)
                     .content(messageDTO.getContent())
                     .attachment(messageDTO.getAttachment())
                     .sendAt(LocalDateTime.now())
-                    .read(false)
-                    .delivered(false)
                     .build();
             messageRepository.save(message);
 
+            // Convert the saved entity to DTO for broadcasting
+            MessageDTO savedMessageDTO = convertToDTO(message);
 
-            String destination = "/user/" + messageDTO.getReceiverId() + "/queue/messages";
-            messagingTemplate.convertAndSend(destination, MessageDTO.builder()
-                    .msgId(message.getMsgId())
-                    .senderId(sender.getUserId())
-                    .receiverId(receiver.getUserId())
-                    .content(message.getContent())
-                    .attachment(message.getAttachment())
-                    .delivered(false)
-                    .read(false)
-                    .sendAt(message.getSendAt())
-                    .build());
+            // Broadcast the message to the receiver
+            String receiverDestination = "/user/" + receiver.getUserId() + "/queue/messages";
+            messagingTemplate.convertAndSend(receiverDestination, savedMessageDTO);
 
+            // Broadcast the message to the sender
+            String senderDestination = "/user/" + sender.getUserId() + "/queue/messages";
+            messagingTemplate.convertAndSend(senderDestination, savedMessageDTO);
 
-            message.setDelivered(true);
-            messageRepository.save(message);
-
-
-            return MessageDTO.builder()
-                    .msgId(message.getMsgId())
-                    .senderId(sender.getUserId())
-                    .receiverId(receiver.getUserId())
-                    .content(message.getContent())
-                    .attachment(message.getAttachment())
-                    .delivered(message.isDelivered())
-                    .read(message.isRead())
-                    .sendAt(message.getSendAt())
-                    .build();
+            return savedMessageDTO;
         } catch (Exception e) {
             throw new RuntimeException("Failed to send message: " + e.getMessage());
         }
     }
 
-    public void markAsRead(UUID messageId) {
+    /**
+     * Fetches messages between two users.
+     */
+    public List<MessageDTO> getMessagesBetweenUsers(String senderId, String receiverId) {
         try {
-            MessageEntity message = messageRepository.findById(messageId)
-                    .orElseThrow(() -> new RuntimeException("Message not found"));
-            message.setRead(true);
-            messageRepository.save(message);
+            // Fetch messages where the sender and receiver are involved
+            List<MessageEntity> messages = messageRepository.findBySenderUserIdAndReceiverUserId(senderId, receiverId);
+            messages.addAll(messageRepository.findBySenderUserIdAndReceiverUserId(receiverId, senderId));
 
+            // Sort messages by timestamp (oldest first)
+            messages.sort((m1, m2) -> m1.getSendAt().compareTo(m2.getSendAt()));
 
-            String destination = "/user/" + message.getSender().getUserId() + "/queue/messages";
-            messagingTemplate.convertAndSend(destination, MessageDTO.builder()
-                    .msgId(message.getMsgId())
-                    .senderId(message.getSender().getUserId())
-                    .receiverId(message.getReceiver().getUserId())
-                    .content(message.getContent())
-                    .delivered(message.isDelivered())
-                    .read(message.isRead())
-                    .sendAt(message.getSendAt())
-                    .build());
+            // Convert entities to DTOs
+            return messages.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to mark message as read: " + e.getMessage());
+            throw new RuntimeException("Failed to fetch messages: " + e.getMessage());
         }
+    }
+
+    /**
+     * Converts a MessageEntity to a MessageDTO.
+     */
+    private MessageDTO convertToDTO(MessageEntity message) {
+        return MessageDTO.builder()
+                .msgId(message.getMsgId())
+                .senderId(message.getSender().getUserId())
+                .receiverId(message.getReceiver().getUserId())
+                .content(message.getContent())
+                .attachment(message.getAttachment())
+                .sendAt(message.getSendAt())
+                .build();
     }
 }
