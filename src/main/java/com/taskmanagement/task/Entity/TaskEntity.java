@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -32,6 +33,8 @@ public class TaskEntity {
     private String createdBy;
 
 
+
+
     public UUID getTaskId() { return taskId; }
     public void setTaskId(UUID taskId) { this.taskId = taskId; }
 
@@ -56,8 +59,10 @@ public class TaskEntity {
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDate.now();
     }
+
 }
