@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<Users, String> {
     @Query("SELECT u FROM Users u WHERE u.deletedAt IS NULL")
     List<Users> findAllActiveUsers();
 
+    @Query("SELECT COUNT(u) > 0 FROM Users u WHERE u.userId = :userId OR u.email = :email")
+    boolean existsByUserIdOrEmail(@Param("userId") String userId, @Param("email") String email);
 
     Optional<Users> findByUserIdAndDeletedAtIsNull(String userId);
 }
