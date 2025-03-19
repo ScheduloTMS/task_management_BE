@@ -27,7 +27,9 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/users/create").hasRole("MENTOR")
+                        .requestMatchers("/api/auth/logout").authenticated()
+                        .requestMatchers(HttpMethod.POST,"/api/users").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.GET,"/api/users").hasRole("MENTOR")
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
                         .requestMatchers("/api/users/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/tasks").hasRole("MENTOR")
