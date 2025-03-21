@@ -1,92 +1,63 @@
 package com.taskmanagement.task.Controller;
 
+import com.taskmanagement.task.DTO.ApiResponse;
 import com.taskmanagement.task.DTO.RemarkDTO;
 import com.taskmanagement.task.Service.RemarkService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
-public class RemarkController 
-{
+public class RemarkController {
 
-    private final RemarkService remarkService;
+    @Autowired
+    private RemarkService remarkService;
 
-    public RemarkController(RemarkService remarkService) 
-    {
-        this.remarkService = remarkService;
-    }
-
-
-    @GetMapping("tasks/{task_id}/remarks")
-    public ResponseEntity<Map<String, Object>> getAllRemarks(@PathVariable("task_id") UUID taskId) {
+    @GetMapping("/tasks/{taskId}/remarks")
+    public ResponseEntity<ApiResponse> getRemarksForAssignment(
+            @PathVariable UUID taskId,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            List<RemarkDTO> remarks = remarkService.getAllRemarksForTask(taskId);
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 200);
-            response.put("message", "Remarks retrieved successfully");
-            response.put("body", remarks);
-
-            return ResponseEntity.ok(response);
+            List<RemarkDTO> remarks = remarkService.getRemarksForAssignment(taskId, userDetails.getUsername());
+            return ResponseEntity.ok(new ApiResponse("success",200, "Remarks retrieved successfully", remarks));
         } catch (RuntimeException e) {
-            // Handle task not found or soft-deleted
-            Map<String, Object> errorResponse = new LinkedHashMap<>();
-            errorResponse.put("status", 404);
-            errorResponse.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 
-
-
-    @PostMapping("tasks/{task_id}/remarks")
-    public ResponseEntity<Map<String, Object>> addRemark(@PathVariable("task_id") UUID taskId,
-                                                         @RequestBody Map<String, String> requestBody) {
+    @PostMapping("/tasks/{taskId}/remarks")
+    public ResponseEntity<ApiResponse> addRemark(
+            @PathVariable UUID taskId,
+            @RequestParam String comment,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            String userId = requestBody.get("user_id");
-            String comment = requestBody.get("comment");
-
-            RemarkDTO remark = remarkService.addRemark(taskId, userId, comment);
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 201);
-            response.put("message", "Comment added successfully");
-            response.put("body", remark);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            RemarkDTO remark = remarkService.addRemark(taskId, userDetails.getUsername(), comment);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse("success",201, "Comment added successfully", remark));
         } catch (RuntimeException e) {
-            // Handle task not found or soft-deleted
-            Map<String, Object> errorResponse = new LinkedHashMap<>();
-            errorResponse.put("status", 404);
-            errorResponse.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 
-
-    @DeleteMapping("/remarks/{remark_id}")
-    public ResponseEntity<Map<String, Object>> deleteRemark(@PathVariable("remark_id") UUID remarkId,
-                                                            @RequestParam("user_id") String userId) {
+    @DeleteMapping("/remarks/{remarkId}")
+    public ResponseEntity<ApiResponse> deleteRemark(
+            @PathVariable UUID remarkId,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            remarkService.deleteRemark(remarkId, userId);
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 200);
-            response.put("message", "Remark deleted successfully");
-
-            return ResponseEntity.ok(response);
+            remarkService.deleteRemark(remarkId, userDetails.getUsername());
+            return ResponseEntity.ok(new ApiResponse("success",200, "Remark deleted successfully", null));
         } catch (RuntimeException e) {
-            Map<String, Object> errorResponse = new LinkedHashMap<>();
-            errorResponse.put("status", 403);
-            errorResponse.put("message", e.getMessage());
-
-            return ResponseEntity.status(403).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse("error",403, e.getMessage(), null));
         }
     }
 }

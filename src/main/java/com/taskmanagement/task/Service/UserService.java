@@ -1,113 +1,149 @@
 package com.taskmanagement.task.Service;
 
 import com.taskmanagement.task.DTO.UserDTO;
-import com.taskmanagement.task.Entity.User;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.UserRepository;
+import com.taskmanagement.task.Util.JwtUtil;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    public boolean isUserExists(String userId, String email) {
+        try {
+            return userRepository.existsByUserIdOrEmail(userId, email);
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking user existence");
+        }
     }
 
-
     @Transactional
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAllByDeletedAtIsNull()
-                .stream()
-                .map(user -> {
-                    UserDTO userDTO = new UserDTO();
-                    userDTO.setUserId(user.getUserId());
-                    userDTO.setName(user.getName());
-                    userDTO.setEmail(user.getEmail());
+    public Users createUser(UserDTO userDTO) {
+        try {
+            String rolePrefix = userDTO.getRole().equals("MENTOR") ? "MT" : "ST";
+            String lastUserId = userRepository.findLastUserIdByRole(rolePrefix);
+            int nextId = lastUserId == null ? 1 : Integer.parseInt(lastUserId.substring(2)) + 1;
+            String newUserId = String.format("%s%03d", rolePrefix, nextId);
 
-                    if (user.getPhoto() != null) {
-                        userDTO.setPhoto(user.getPhoto().clone());
-                    }
-
-                    return userDTO;
-                })
-                .collect(Collectors.toList());
-    }
-
-
-    @Transactional
-    public Optional<UserDTO> getUserById(String userId) {
-        return userRepository.findById(userId).map(user -> {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setUserId(user.getUserId());
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-
-
-            if (user.getPhoto() != null) {
-                userDTO.setPhoto(user.getPhoto().clone());
+            if (isUserExists(newUserId, userDTO.getEmail())) {
+                throw new RuntimeException("User already exists");
             }
 
-            return userDTO;
-        });
-    }
+            Users user = new Users();
+            user.setUserId(newUserId);
+            user.setName(userDTO.getName());
+            user.setPassword(passwordEncoder.encode("TMS@123"));
+            user.setRole(userDTO.getRole());
+            user.setEmail(userDTO.getEmail());
 
+            return userRepository.save(user);
 
-
-    public User createUser(String userId, String name, String password) {
-        String hashedPassword = passwordEncoder.encode(password);
-        User user = new User(userId, name, null, hashedPassword, null);
-        return userRepository.save(user);
-    }
-
-    public User updateUser(String userId, String email, String password, MultipartFile photo) throws IOException {
-        User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        if (StringUtils.hasText(email)) {
-            user.setEmail(email);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating user: " + e.getMessage());
         }
-        if (StringUtils.hasText(password)) {
-            user.setPassword(passwordEncoder.encode(password));
-        }
-        if (photo != null && !photo.isEmpty()) {
-            user.setPhoto(photo.getBytes()); // Directly set the byte array
-        }
-
-        return userRepository.save(user);
     }
 
-    public void deleteUser(String userId) {
-        User user = userRepository.findByUserIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    @Transactional
+    public boolean validateAndUpdatePassword(
+            String userId,
+            String currentPassword,
+            String newPassword,
+            String token,
+            MultipartFile photo) throws IOException {
 
-        user.setDeletedAt(LocalDateTime.now());
-        userRepository.save(user);
-    }
+        try {
+            Users user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-    public void restoreUser(String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+            if (currentPassword != null && newPassword != null) {
+                if (passwordEncoder.matches(currentPassword, user.getPassword())) {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    jwtUtil.blacklistToken(token);
+                } else {
+                    throw new RuntimeException("Current password is incorrect");
+                }
+            }
 
-        if (user.getDeletedAt() != null) {
-            user.setDeletedAt(null);
+            if (photo != null && !photo.isEmpty()) {
+                user.setPhoto(photo.getBytes());
+            }
+
             userRepository.save(user);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is already active");
+            return true;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating password: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void deleteUser(String userId) {
+        try {
+            Users user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("User with ID " + userId + " not found"));
+
+            if (user.getDeletedAt() != null) {
+                throw new RuntimeException("User with ID " + userId + " is already deleted");
+            }
+
+            user.setDeletedAt(LocalDateTime.now());
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting user: " + e.getMessage());
+        }
+    }
+
+    public void logout(String token) {
+        try {
+            jwtUtil.blacklistToken(token);
+        } catch (Exception e) {
+            throw new RuntimeException("Error during logout: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public List<Users> getAllUsers() {
+        try {
+            return userRepository.findAllActiveUsers();
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving users");
+        }
+    }
+
+    @Transactional
+    public Users getUserById(String userId) {
+        try {
+            return userRepository.findByUserIdAndDeletedAtIsNull(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found or deleted"));
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving user by ID: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void updateUser(Users user) {
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating user: " + e.getMessage());
         }
     }
 }

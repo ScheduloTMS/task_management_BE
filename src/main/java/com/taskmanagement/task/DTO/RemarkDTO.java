@@ -1,23 +1,42 @@
 package com.taskmanagement.task.DTO;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Getter
-@RequiredArgsConstructor
 public class RemarkDTO {
-    private final UUID remarkId;
-    private final UUID taskId;
-    private final String userId;
-    private final String name;
-    private final String photo;
+    private UUID remarkId;
+    private UUID taskId;
+    private String userId;
+    private String comment;
+    private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
 
-    @NotBlank(message = "Comment cannot be empty")
-    private final String comment;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime deletedAt;
+
+    public RemarkDTO(UUID remarkId, UUID taskId, String userId, String comment, LocalDateTime createdAt, LocalDateTime deletedAt) {
+        this.remarkId = remarkId;
+        this.taskId = taskId;
+        this.userId = userId;
+        this.comment = comment;
+        this.createdAt = createdAt;
+        this.deletedAt = deletedAt;
+    }
+
+
+    public UUID getRemarkId() { return remarkId; }
+    public void setRemarkId(UUID remarkId) { this.remarkId = remarkId; }
+
+    public UUID getTaskId() { return taskId; }
+    public void setTaskId(UUID taskId) { this.taskId = taskId; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

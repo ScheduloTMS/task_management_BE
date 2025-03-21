@@ -2,20 +2,14 @@ package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "tasks")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class TaskEntity 
-{
+public class TaskEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID taskId;
@@ -32,24 +26,43 @@ public class TaskEntity
     private LocalDate dueDate;
 
     @Lob
-    @Column(columnDefinition = "BYTEA")
     private byte[] file;
 
     private LocalDateTime deletedAt;
 
+    private String createdBy;
+
+
+
+
+    public UUID getTaskId() { return taskId; }
+    public void setTaskId(UUID taskId) { this.taskId = taskId; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public LocalDate getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
+
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
+
+    public byte[] getFile() { return file; }
+    public void setFile(byte[] file) { this.file = file; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+
     @PrePersist
-    protected void onCreate() 
-    {
+    protected void onCreate() {
         this.createdAt = LocalDate.now();
     }
 
-    public TaskEntity(String title, String description, LocalDate dueDate, byte[] file) 
-    {
-        this.title = title;
-        this.description = description;
-        this.createdAt = LocalDate.now();
-        this.dueDate = dueDate;
-        this.file = file;
-        this.deletedAt = null;
-    }
 }

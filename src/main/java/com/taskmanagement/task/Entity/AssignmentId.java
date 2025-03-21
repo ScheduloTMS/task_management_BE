@@ -1,21 +1,25 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.Embeddable;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.util.UUID;
 
 @Embeddable
-@Data
-@NoArgsConstructor
 public class AssignmentId implements Serializable {
     private UUID taskId;
     private String userId;
 
-    public AssignmentId(UUID taskId, String userId)
-    {
+    public AssignmentId() {}
+
+    public AssignmentId(UUID taskId, String userId) {
         this.taskId = taskId;
         this.userId = userId;
     }
+
+
+    public UUID getTaskId() { return taskId; }
+    public void setTaskId(UUID taskId) { this.taskId = taskId; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 }

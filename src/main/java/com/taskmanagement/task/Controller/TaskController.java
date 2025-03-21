@@ -1,168 +1,172 @@
 package com.taskmanagement.task.Controller;
 
+import com.taskmanagement.task.DTO.ApiResponse;
 import com.taskmanagement.task.Entity.TaskEntity;
+import com.taskmanagement.task.Entity.AssignmentEntity;
+import com.taskmanagement.task.Service.AssignmentService;
 import com.taskmanagement.task.Service.TaskService;
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/tasks")
-
 public class TaskController {
 
-    private final TaskService taskService;
+    @Autowired
+    private TaskService taskService;
 
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
-    }
-
+    @Autowired
+    private AssignmentService assignmentService;
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Map<String, Object>> createTask(
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse> createTask(
             @RequestParam @NotNull(message = "Title cannot be null") String title,
             @RequestParam @NotNull(message = "Description cannot be null") String description,
-            @RequestParam @NotNull(message = "Due date cannot be null") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
-            @RequestParam(required = false) MultipartFile file) {
+            @RequestParam @NotNull(message = "Due date cannot be null") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate,
+            @RequestParam(required = false) MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         try {
+            LocalDate createdAt = LocalDate.now();
+
+
+            if (!dueDate.isAfter(createdAt)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse("error", 400, "Due date must be after the created date", null));
+            }
+
+
+            if (taskService.isDuplicateTask(title, description)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new ApiResponse("error", 409, "Task with the same title and description already exists.", null));
+            }
+
             byte[] fileData = (file != null) ? file.getBytes() : null;
-            TaskEntity createdTask = taskService.createTask(title, description, due_date, fileData);
+            TaskEntity createdTask = taskService.createTask(title, description, dueDate, fileData, userDetails.getUsername());
 
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 201);
-            response.put("message", "Task created successfully");
-            response.put("body", createdTask);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse("success", 201, "Task created successfully", createdTask));
         } catch (IOException e) {
-            Map<String, Object> errorResponse = new LinkedHashMap<>();
-            errorResponse.put("status", 400);
-            errorResponse.put("message", "Error processing file");
-            errorResponse.put("body", null);
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse("error", 400, "Failed to create task: " + e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("error", 500, e.getMessage(), null));
         }
     }
 
 
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllTasks() {
-        List<TaskEntity> tasks = taskService.getAllTasks();
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse> getAllTasks(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            List<TaskEntity> tasks;
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", 200);
-        response.put("message", "Successfully retrieved the list of tasks");
-        response.put("body", tasks);
-
-        return ResponseEntity.ok(response);
-    }
-
-
-    @GetMapping("/{task_id}")
-    public ResponseEntity<Map<String, Object>> getTaskById(@PathVariable UUID task_id) {
-        Optional<TaskEntity> task = taskService.getTaskById(task_id);
-        if (task.isPresent()) {
-
-            if (task.get().getDeletedAt() != null) {
-                Map<String, Object> errorResponse = new LinkedHashMap<>();
-                errorResponse.put("status", 404);
-                errorResponse.put("message", "Task has been deleted");
-                errorResponse.put("body", null);
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MENTOR"))) {
+                tasks = taskService.getAllTasksForUser(userDetails.getUsername());
+            } else {
+                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(userDetails.getUsername());
+                tasks = assignments.stream()
+                        .map(a -> taskService.getTaskById(a.getId().getTaskId()))
+                        .collect(Collectors.toList());
             }
 
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 200);
-            response.put("message", "Successfully retrieved task details");
-            response.put("body", task.get());
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(new ApiResponse("success", 200, "Tasks retrieved successfully", tasks));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
+    }
 
-        Map<String, Object> errorResponse = new LinkedHashMap<>();
-        errorResponse.put("status", 404);
-        errorResponse.put("message", "Task not found");
-        errorResponse.put("body", null);
+    @GetMapping("/{taskId}")
+    public ResponseEntity<ApiResponse> getTaskById(@PathVariable UUID taskId,
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            TaskEntity task;
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MENTOR"))) {
+                task = taskService.getTaskByIdForUser(taskId, userDetails.getUsername());
+            } else {
+                if (!assignmentService.isStudentAssignedToTask(taskId, userDetails.getUsername())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse("error", 403, "You are not assigned to this task", null));
+                }
+                task = taskService.getTaskById(taskId);
+            }
+
+            return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", task));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse("error", 404, e.getMessage(), null));
+        }
     }
 
 
-    @PutMapping(value = "/{task_id}", consumes = "multipart/form-data")
-    public ResponseEntity<Map<String, Object>> updateTask(
-            @PathVariable UUID task_id,
-            @RequestParam @NotNull(message = "Title cannot be null") String title,
-            @RequestParam @NotNull(message = "Description cannot be null") String description,
-            @RequestParam @NotNull(message = "Due date cannot be null") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate due_date,
-            @RequestParam(required = false) MultipartFile file) {
+    @PutMapping("/{taskId}")
+    @PreAuthorize("hasRole('MENTOR')")
+    @Transactional
+    public ResponseEntity<ApiResponse> updateTask(
+            @PathVariable UUID taskId,
+            @RequestParam @NotNull String title,
+            @RequestParam @NotNull String description,
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate,
+            @RequestParam(required = false) MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        Optional<TaskEntity> existingTask = taskService.getTaskById(task_id);
+        try {
 
-        if (existingTask.isPresent()) {
+            TaskEntity existingTask = taskService.getTaskById(taskId);
 
-            if (existingTask.get().getDeletedAt() != null) {
-                Map<String, Object> errorResponse = new LinkedHashMap<>();
-                errorResponse.put("status", 404);
-                errorResponse.put("message", "Task has been deleted");
-                errorResponse.put("body", null);
 
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            if (existingTask.getDeletedAt() != null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse("error", 404, "Task already deleted", null));
             }
 
-            try {
-                byte[] fileData = (file != null) ? file.getBytes() : null;
-                TaskEntity updatedTask = taskService.updateTask(task_id, title, description, due_date, fileData);
 
-                Map<String, Object> response = new LinkedHashMap<>();
-                response.put("status", 200);
-                response.put("message", "Task updated successfully");
-                response.put("body", updatedTask);
+            byte[] fileData = (file != null) ? file.getBytes() : null;
 
-                return ResponseEntity.ok(response);
-            } catch (IOException e) {
-                Map<String, Object> errorResponse = new LinkedHashMap<>();
-                errorResponse.put("status", 400);
-                errorResponse.put("message", "Error processing file");
-                errorResponse.put("body", null);
 
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-            }
+            TaskEntity updatedTask = taskService.updateTask(taskId, title, description, dueDate, fileData, userDetails.getUsername());
+
+            return ResponseEntity.ok(new ApiResponse("success", 200, "Task updated successfully", updatedTask));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse("error", 400, "Failed to update task: " + e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
-
-        Map<String, Object> errorResponse = new LinkedHashMap<>();
-        errorResponse.put("status", 404);
-        errorResponse.put("message", "Task not found");
-        errorResponse.put("body", null);
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    @DeleteMapping("/{task_id}")
-    public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable UUID task_id) {
-        boolean deleted = taskService.deleteTask(task_id);
-        if (deleted) {
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("status", 200);
-            response.put("message", "Task deleted successfully");
-            response.put("body", null);
 
-            return ResponseEntity.ok(response);
+    @DeleteMapping("/{taskId}")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse> deleteTask(
+            @PathVariable UUID taskId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            taskService.deleteTask(taskId, userDetails.getUsername());
+            return ResponseEntity.ok(new ApiResponse("success", 200, "Task deleted successfully", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
-
-        Map<String, Object> errorResponse = new LinkedHashMap<>();
-        errorResponse.put("status", 404);
-        errorResponse.put("message", "Task not found");
-        errorResponse.put("body", null);
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 }

@@ -1,42 +1,72 @@
 package com.taskmanagement.task.Entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "notes")
-@Data
-@NoArgsConstructor
-public class Note
-{
-    
+public class Note {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID noteId;
-    
+
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    private User user;
-    
+    @JoinColumn (nullable = false)
+    private Users user;
+
     @Column(nullable = false)
     private String noteText;
-    
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
-    
-    public Note(User user, String noteText, LocalDateTime createdAt) 
-    {
-        this.noteId = UUID.randomUUID();
+
+
+    public Note() {}
+
+    public Note(Users user, String noteText) {
         this.user = user;
         this.noteText = noteText;
-        this.createdAt = createdAt;
+    }
+
+
+    public UUID getNoteId() { return noteId; }
+    public void setNoteId(UUID noteId) { this.noteId = noteId; }
+
+    public Users getUser() { return user; }
+    public void setUser(Users user) { this.user = user; }
+
+    public String getNoteText() { return noteText; }
+    public void setNoteText(String noteText) { this.noteText = noteText; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    @JsonProperty("userId")
+    public String getUserId() {
+        return user != null ? user.getUserId() : null;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

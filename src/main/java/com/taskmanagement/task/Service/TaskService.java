@@ -1,66 +1,113 @@
 package com.taskmanagement.task.Service;
 
-
+import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.TaskEntity;
+import com.taskmanagement.task.Repository.AssignmentRepository;
 import com.taskmanagement.task.Repository.TaskRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class TaskService {
-    private final TaskRepository taskRepository;
 
-    public TaskService(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
-    }
+    @Autowired
+    private TaskRepository taskRepository;
 
-    @Transactional
-    public TaskEntity createTask(String title, String description, LocalDate dueDate, byte[] file) {
-        List<TaskEntity> existingTasks = taskRepository.findByTitleIgnoreCaseAndDescriptionIgnoreCaseAndDueDate(title, description, dueDate);
-        if (!existingTasks.isEmpty()) {
-            throw new RuntimeException("A task with the same title, description, and due date already exists");
-        }
+    @Autowired
+    private AssignmentRepository assignmentRepository;
 
-        TaskEntity task = new TaskEntity(title, description, dueDate, file);
-        return taskRepository.save(task);
-    }
-
-
-    public List<TaskEntity> getAllTasks() {
-        return taskRepository.findByDeletedAtIsNull();
-    }
-
-
-    public Optional<TaskEntity> getTaskById(UUID taskId) {
-        return taskRepository.findById(taskId).filter(task -> task.getDeletedAt() == null);
+    public TaskEntity getTaskById(UUID taskId) {
+        return taskRepository.findByTaskId(taskId)
+                .filter(task -> task.getDeletedAt() == null)
+                .orElseThrow(() -> new RuntimeException("Task not found or has been deleted"));
     }
 
 
     @Transactional
-    public TaskEntity updateTask(UUID taskId, String title, String description, LocalDate dueDate, byte[] file) {
-        return taskRepository.findById(taskId).map(task -> {
+    public TaskEntity createTask(String title, String description, LocalDate dueDate, byte[] fileData, String createdBy) {
+        try {
+            if (taskRepository.findByCreatedByAndDeletedAtIsNull(createdBy)
+                    .stream().anyMatch(task -> task.getTitle().equalsIgnoreCase(title))) {
+                throw new RuntimeException("Task with the same title already exists");
+            }
+
+            TaskEntity task = new TaskEntity();
             task.setTitle(title);
             task.setDescription(description);
             task.setDueDate(dueDate);
-            if (file != null) {
-                task.setFile(file);
-            }
+            task.setFile(fileData);
+            task.setCreatedBy(createdBy);
             return taskRepository.save(task);
-        }).orElseThrow(() -> new RuntimeException("Task not found"));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create task: " + e.getMessage());
+        }
+    }
+
+    public TaskEntity getTaskByIdForUser(UUID taskId, String username) {
+        TaskEntity task = getTaskById(taskId);
+        if (!task.getCreatedBy().equals(username)) {
+            throw new RuntimeException("You are not authorized to access this task");
+        }
+        return task;
+    }
+
+    public List<TaskEntity> getAllTasksForUser(String username) {
+        try {
+            return taskRepository.findByCreatedByAndDeletedAtIsNull(username);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve tasks for user: " + e.getMessage());
+        }
+    }
+    public boolean isDuplicateTask(String title, String description) {
+        return taskRepository.existsByTitleIgnoreCaseAndDescriptionIgnoreCase(title, description);
+    }
+
+    @Transactional
+    public TaskEntity updateTask(UUID taskId, String title, String description, LocalDate dueDate, byte[] fileData, String username) {
+        try {
+            TaskEntity task = getTaskById(taskId);
+
+            if (task.getDeletedAt() != null) {
+                throw new RuntimeException("Task already deleted");
+            }
+
+            task.setTitle(title);
+            task.setDescription(description);
+            task.setDueDate(dueDate);
+            if (fileData != null) {
+                task.setFile(fileData);
+            }
+
+            return taskRepository.save(task);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update task: " + e.getMessage());
+        }
     }
 
 
     @Transactional
-    public boolean deleteTask(UUID taskId) {
-        return taskRepository.findById(taskId).map(task -> {
-            task.setDeletedAt(LocalDateTime.now());
-            taskRepository.save(task);
-            return true;
-        }).orElse(false);
+    public void deleteTask(UUID taskId, String username) {
+        TaskEntity task = getTaskByIdForUser(taskId, username);
+
+        if (task.getDeletedAt() != null) {
+            throw new RuntimeException("Task already deleted");
+        }
+
+        task.setDeletedAt(java.time.LocalDateTime.now());
+
+        List<AssignmentEntity> assignments = assignmentRepository.findAllById_TaskId(taskId);
+        for (AssignmentEntity assignment : assignments) {
+            assignment.setDeletedAt(java.time.LocalDateTime.now());
+            assignment.setUpdatedAt(java.time.LocalDateTime.now());
+            assignmentRepository.save(assignment);
+        }
+
+        taskRepository.save(task);
     }
+
 }

@@ -1,14 +1,13 @@
 package com.taskmanagement.task.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
-@NoArgsConstructor
 @Table(name = "assignments")
 public class AssignmentEntity {
 
@@ -19,17 +18,55 @@ public class AssignmentEntity {
     private byte[] fileUploads;
     private String submissionStatus;
     private LocalDateTime submittedAt;
+    private LocalDateTime updatedAt;
 
     @Column(nullable = true)
     private String score;
 
+    @Column(nullable = true)
+    private LocalDateTime deletedAt;
 
-    public AssignmentEntity(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score)
-    {
+    @ManyToOne
+    @JoinColumn(insertable = false, updatable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private TaskEntity task;
+
+
+
+    public AssignmentEntity() {}
+
+    public AssignmentEntity(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score) {
         this.id = new AssignmentId(taskId, userId);
         this.fileUploads = fileUploads;
         this.submissionStatus = submissionStatus;
         this.submittedAt = LocalDateTime.now();
         this.score = score;
+        this.updatedAt = null;
+    }
+
+
+    public AssignmentId getId() { return id; }
+    public void setId(AssignmentId id) { this.id = id; }
+
+    public byte[] getFileUploads() { return fileUploads; }
+    public void setFileUploads(byte[] fileUploads) { this.fileUploads = fileUploads; }
+
+    public String getSubmissionStatus() { return submissionStatus; }
+    public void setSubmissionStatus(String submissionStatus) { this.submissionStatus = submissionStatus; }
+
+    public LocalDateTime getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getScore() { return score; }
+    public void setScore(String score) { this.score = score; }
+
+    public void markUpdated() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

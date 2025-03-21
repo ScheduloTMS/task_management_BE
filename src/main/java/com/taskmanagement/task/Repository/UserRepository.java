@@ -1,23 +1,25 @@
 package com.taskmanagement.task.Repository;
 
-import com.taskmanagement.task.Entity.User;
+import com.taskmanagement.task.Entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, String> {
+public interface UserRepository extends JpaRepository<Users, String> {
 
-    @Query("SELECT u FROM User u WHERE u.userId = :userId")
-    Optional<User> findByIdWithPhoto(@Param("userId") String userId);
+    Optional<Users> findByUserId(String userId);
 
+    @Query("SELECT u.userId FROM Users u WHERE u.userId LIKE :rolePrefix% ORDER BY u.userId DESC LIMIT 1")
+    String findLastUserIdByRole(@Param("rolePrefix") String rolePrefix);
 
-    List<User> findAllByDeletedAtIsNull();
+    @Query("SELECT u FROM Users u WHERE u.deletedAt IS NULL")
+    List<Users> findAllActiveUsers();
 
+    @Query("SELECT COUNT(u) > 0 FROM Users u WHERE u.userId = :userId OR u.email = :email")
+    boolean existsByUserIdOrEmail(@Param("userId") String userId, @Param("email") String email);
 
-    Optional<User> findByUserIdAndDeletedAtIsNull(String userId);
+    Optional<Users> findByUserIdAndDeletedAtIsNull(String userId);
 }

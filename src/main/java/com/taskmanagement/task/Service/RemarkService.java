@@ -1,16 +1,16 @@
 package com.taskmanagement.task.Service;
 
 import com.taskmanagement.task.DTO.RemarkDTO;
+import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Entity.RemarkEntity;
-import com.taskmanagement.task.Entity.TaskEntity;
-import com.taskmanagement.task.Entity.User;
+import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Repository.RemarkRepository;
-import com.taskmanagement.task.Repository.TaskRepository;
-import com.taskmanagement.task.Repository.UserRepository;
+import com.taskmanagement.task.Repository.AssignmentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Base64;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,70 +18,45 @@ import java.util.stream.Collectors;
 @Service
 public class RemarkService {
 
-    private final RemarkRepository remarkRepository;
-    private final TaskRepository taskRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private RemarkRepository remarkRepository;
 
-    public RemarkService(RemarkRepository remarkRepository, TaskRepository taskRepository, UserRepository userRepository) {
-        this.remarkRepository = remarkRepository;
-        this.taskRepository = taskRepository;
-        this.userRepository = userRepository;
-    }
-
+    @Autowired
+    private AssignmentRepository assignmentRepository;
 
     @Transactional(readOnly = true)
-    public List<RemarkDTO> getAllRemarksForTask(UUID taskId) {
-        TaskEntity task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+    public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String userId) {
 
-        if (task.getDeletedAt() != null) {
-            throw new RuntimeException("Task has been deleted");
-        }
+        AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
-        // Fetch remarks for the task
-        List<RemarkEntity> remarks = remarkRepository.findRemarksWithUserDetailsByTaskId(taskId);
+
+        List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskIdAndAssignment_UserId(taskId, userId);
 
         return remarks.stream().map(remark -> new RemarkDTO(
                 remark.getRemarkId(),
-                remark.getTask().getTaskId(),
-                remark.getUser().getUserId(),
-                remark.getUser().getName(),
-                convertPhotoToBase64(remark.getUser().getPhoto()),
+                remark.getAssignment().getId().getTaskId(),
+                remark.getAssignment().getId().getUserId(),
                 remark.getComment(),
                 remark.getCreatedAt(),
                 remark.getDeletedAt()
         )).collect(Collectors.toList());
     }
 
-
     @Transactional
     public RemarkDTO addRemark(UUID taskId, String userId, String comment) {
-        if (comment == null || comment.trim().isEmpty()) {
-            throw new IllegalArgumentException("Comment cannot be null or empty");
-        }
 
-        // Fetch the task and check if it is soft-deleted
-        TaskEntity task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+        AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
-        if (task.getDeletedAt() != null) {
-            throw new RuntimeException("Task has been deleted");
-        }
 
-        // Fetch the user
-        User user = userRepository.findByIdWithPhoto(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Create and save the remark
-        RemarkEntity remark = new RemarkEntity(task, user, comment);
+        RemarkEntity remark = new RemarkEntity(assignment, comment);
         RemarkEntity savedRemark = remarkRepository.save(remark);
 
         return new RemarkDTO(
                 savedRemark.getRemarkId(),
-                savedRemark.getTask().getTaskId(),
-                savedRemark.getUser().getUserId(),
-                savedRemark.getUser().getName(),
-                convertPhotoToBase64(savedRemark.getUser().getPhoto()),
+                savedRemark.getAssignment().getId().getTaskId(),
+                savedRemark.getAssignment().getId().getUserId(),
                 savedRemark.getComment(),
                 savedRemark.getCreatedAt(),
                 savedRemark.getDeletedAt()
@@ -90,19 +65,15 @@ public class RemarkService {
 
     @Transactional
     public void deleteRemark(UUID remarkId, String userId) {
-        RemarkEntity remark = remarkRepository.findByRemarkIdAndDeletedAtIsNull(remarkId)
-                .orElseThrow(() -> new RuntimeException("Remark not found or already deleted"));
+        RemarkEntity remark = remarkRepository.findById(remarkId)
+                .orElseThrow(() -> new RuntimeException("Remark not found"));
 
-        if (!remark.getUser().getUserId().equals(userId)) {
+
+        if (!remark.getAssignment().getId().getUserId().equals(userId)) {
             throw new RuntimeException("Permission denied: You can only delete your own remarks");
         }
 
         remark.softDelete();
         remarkRepository.save(remark);
-    }
-
-
-    private String convertPhotoToBase64(byte[] photo) {
-        return (photo != null) ? Base64.getEncoder().encodeToString(photo) : null;
     }
 }

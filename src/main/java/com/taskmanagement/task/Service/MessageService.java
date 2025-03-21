@@ -4,7 +4,7 @@ import com.taskmanagement.task.Entity.MessageEntity;
 import com.taskmanagement.task.DTO.MessageDTO;
 import com.taskmanagement.task.Repository.MessageRepository;
 import com.taskmanagement.task.Repository.UserRepository;
-import com.taskmanagement.task.Entity.User;
+import com.taskmanagement.task.Entity.Users;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -29,9 +29,9 @@ public class MessageService {
     public MessageDTO sendMessage(MessageDTO messageDTO) {
         try {
 
-            User sender = userRepository.findById(messageDTO.getSenderId())
+            Users sender = userRepository.findById(messageDTO.getSenderId())
                     .orElseThrow(() -> new RuntimeException("Sender not found"));
-            User receiver = userRepository.findById(messageDTO.getReceiverId())
+            Users receiver = userRepository.findById(messageDTO.getReceiverId())
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
 
