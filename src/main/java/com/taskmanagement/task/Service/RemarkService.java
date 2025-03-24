@@ -3,8 +3,10 @@ package com.taskmanagement.task.Service;
 import com.taskmanagement.task.DTO.RemarkDTO;
 import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Entity.RemarkEntity;
+import com.taskmanagement.task.Entity.TaskEntity;
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Repository.RemarkRepository;
+import com.taskmanagement.task.Repository.TaskRepository;
 import com.taskmanagement.task.Repository.AssignmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,18 +19,21 @@ import java.util.stream.Collectors;
 
 @Service
 public class RemarkService {
-
     @Autowired
     private RemarkRepository remarkRepository;
 
     @Autowired
     private AssignmentRepository assignmentRepository;
 
+    @Autowired
+    private TaskRepository taskRepository;
+
     @Transactional(readOnly = true)
     public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String userId) {
 
-        AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+        if (!assignmentRepository.existsById(new AssignmentId(taskId, userId))) {
+            throw new RuntimeException("Assignment not found");
+        }
 
 
         List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskIdAndAssignment_UserId(taskId, userId);
@@ -46,22 +51,35 @@ public class RemarkService {
     @Transactional
     public RemarkDTO addRemark(UUID taskId, String userId, String comment) {
 
-        AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found with ID: " + taskId));
 
+
+        boolean isStudentAssigned = assignmentRepository.existsById(new AssignmentId(taskId, userId));
+        boolean isMentor = task.getCreatedBy().equals(userId);
+
+        if (!isStudentAssigned && !isMentor) {
+            throw new RuntimeException("Only assigned students or the task mentor can add remarks");
+        }
+
+
+        AssignmentEntity assignment = isStudentAssigned
+                ? assignmentRepository.findById(new AssignmentId(taskId, userId)).orElseThrow()
+                : null;
 
         RemarkEntity remark = new RemarkEntity(assignment, comment);
         RemarkEntity savedRemark = remarkRepository.save(remark);
 
         return new RemarkDTO(
                 savedRemark.getRemarkId(),
-                savedRemark.getAssignment().getId().getTaskId(),
-                savedRemark.getAssignment().getId().getUserId(),
+                taskId,
+                userId,
                 savedRemark.getComment(),
                 savedRemark.getCreatedAt(),
                 savedRemark.getDeletedAt()
         );
     }
+
 
     @Transactional
     public void deleteRemark(UUID remarkId, String userId) {
@@ -76,4 +94,5 @@ public class RemarkService {
         remark.softDelete();
         remarkRepository.save(remark);
     }
+
 }
