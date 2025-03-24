@@ -17,4 +17,6 @@ public interface RemarkRepository extends JpaRepository<RemarkEntity, UUID> {
             @Param("taskId") UUID taskId,
             @Param("userId") String userId
     );
+    List<RemarkEntity> findByAssignment_Id_TaskIdAndAssignment_Id_UserIdAndDeletedAtIsNull(UUID taskId, String userId);
+
 }

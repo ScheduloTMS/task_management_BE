@@ -35,8 +35,8 @@ public class RemarkService {
             throw new RuntimeException("Assignment not found");
         }
 
-
-        List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskIdAndAssignment_UserId(taskId, userId);
+        // Fetch only remarks where deletedAt is NULL
+        List<RemarkEntity> remarks = remarkRepository.findByAssignment_Id_TaskIdAndAssignment_Id_UserIdAndDeletedAtIsNull(taskId, userId);
 
         return remarks.stream().map(remark -> new RemarkDTO(
                 remark.getRemarkId(),
