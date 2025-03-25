@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class RemarkService {
+
     @Autowired
     private RemarkRepository remarkRepository;
 
@@ -27,24 +28,31 @@ public class RemarkService {
     @Autowired
     private TaskRepository taskRepository;
 
+
     @Transactional(readOnly = true)
     public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String userId) {
-        if (!assignmentRepository.existsById(new AssignmentId(taskId, userId))) {
-            throw new RuntimeException("Assignment not found");
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        boolean isStudentAssigned = assignmentRepository.existsById(new AssignmentId(taskId, userId));
+        boolean isMentor = task.getCreatedBy().equals(userId);
+
+        if (!isStudentAssigned && !isMentor) {
+            throw new RuntimeException("Access denied: Only assigned students or the task mentor can view remarks");
         }
 
-
-        List<RemarkEntity> remarks = remarkRepository.findByAssignment_Id_TaskIdAndAssignment_Id_UserIdAndDeletedAtIsNull(taskId, userId);
+        List<RemarkEntity> remarks = remarkRepository.findByTaskIdAndDeletedAtIsNull(taskId);
 
         return remarks.stream().map(remark -> new RemarkDTO(
                 remark.getRemarkId(),
-                remark.getAssignment() != null ? remark.getAssignment().getId().getTaskId() : null,
+                remark.getTaskId(),
                 remark.getAuthorId(),
                 remark.getComment(),
                 remark.getCreatedAt(),
                 remark.getDeletedAt()
         )).collect(Collectors.toList());
     }
+
 
     @Transactional
     public RemarkDTO addRemark(UUID taskId, String userId, String comment) {
@@ -58,16 +66,21 @@ public class RemarkService {
             throw new RuntimeException("Only assigned students or the task mentor can add remarks");
         }
 
+
         AssignmentEntity assignment = isStudentAssigned
-                ? assignmentRepository.findById(new AssignmentId(taskId, userId)).orElseThrow()
+                ? assignmentRepository.findById(new AssignmentId(taskId, userId)).orElse(null)
                 : null;
 
-        RemarkEntity remark = new RemarkEntity(assignment, comment, userId);
+
+        RemarkEntity remark = isMentor
+                ? new RemarkEntity(taskId, comment, userId)
+                : new RemarkEntity(assignment, taskId, comment, userId);
+
         RemarkEntity savedRemark = remarkRepository.save(remark);
 
         return new RemarkDTO(
                 savedRemark.getRemarkId(),
-                taskId,
+                savedRemark.getTaskId(),
                 savedRemark.getAuthorId(),
                 savedRemark.getComment(),
                 savedRemark.getCreatedAt(),
@@ -75,19 +88,14 @@ public class RemarkService {
         );
     }
 
+
     @Transactional
     public void deleteRemark(UUID remarkId, String userId) {
         RemarkEntity remark = remarkRepository.findById(remarkId)
                 .orElseThrow(() -> new RuntimeException("Remark not found"));
 
-        if (remark.getAssignment() != null) {
-            if (!remark.getAssignment().getId().getUserId().equals(userId)) {
-                throw new RuntimeException("Permission denied: You can only delete your own remarks");
-            }
-        } else {
-            if (!remark.getAuthorId().equals(userId)) {
-                throw new RuntimeException("Permission denied: You can only delete your own remarks");
-            }
+        if (!remark.getAuthorId().equals(userId)) {
+            throw new RuntimeException("Permission denied: You can only delete your own remarks");
         }
 
         remark.softDelete();

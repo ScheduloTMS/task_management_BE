@@ -12,11 +12,20 @@ import java.util.UUID;
 @Repository
 public interface RemarkRepository extends JpaRepository<RemarkEntity, UUID> {
 
-    @Query("SELECT r FROM RemarkEntity r WHERE r.assignment.id.taskId = :taskId AND r.assignment.id.userId = :userId")
+
+    @Query("SELECT r FROM RemarkEntity r " +
+            "WHERE r.assignment.id.taskId = :taskId " +
+            "AND r.assignment.id.userId = :userId " +
+            "AND r.deletedAt IS NULL")
     List<RemarkEntity> findByAssignment_TaskIdAndAssignment_UserId(
             @Param("taskId") UUID taskId,
             @Param("userId") String userId
     );
-    List<RemarkEntity> findByAssignment_Id_TaskIdAndAssignment_Id_UserIdAndDeletedAtIsNull(UUID taskId, String userId);
 
+
+    @Query("SELECT r FROM RemarkEntity r " +
+            "WHERE r.taskId = :taskId " +
+            "AND r.deletedAt IS NULL")
+
+    List<RemarkEntity> findByTaskIdAndDeletedAtIsNull(@Param("taskId") UUID taskId);
 }

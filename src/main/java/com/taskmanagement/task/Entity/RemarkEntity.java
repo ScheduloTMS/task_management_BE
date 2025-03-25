@@ -14,10 +14,12 @@ public class RemarkEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "taskId", referencedColumnName = "taskId"),
-            @JoinColumn(name = "userId", referencedColumnName = "userId")
+            @JoinColumn(name = "taskId", referencedColumnName = "taskId", insertable = false, updatable = false),
+            @JoinColumn(name = "userId", referencedColumnName = "userId", insertable = false, updatable = false)
     })
     private AssignmentEntity assignment;
+    @Column(nullable = false)
+    private UUID taskId;
 
     @Column(nullable = false)
     private String comment;
@@ -31,15 +33,18 @@ public class RemarkEntity {
     public RemarkEntity() {}
 
 
-    public RemarkEntity(AssignmentEntity assignment, String comment, String authorId) {
+    public RemarkEntity(AssignmentEntity assignment, UUID taskId, String comment, String authorId) {
         this.assignment = assignment;
+        this.taskId = taskId;
         this.comment = comment;
         this.authorId = authorId;
         this.createdAt = LocalDateTime.now();
     }
 
 
-    public RemarkEntity(String comment, String authorId) {
+    public RemarkEntity(UUID taskId, String comment, String authorId) {
+        this.assignment = null;
+        this.taskId = taskId;
         this.comment = comment;
         this.authorId = authorId;
         this.createdAt = LocalDateTime.now();
@@ -50,6 +55,9 @@ public class RemarkEntity {
 
     public AssignmentEntity getAssignment() { return assignment; }
     public void setAssignment(AssignmentEntity assignment) { this.assignment = assignment; }
+
+    public UUID getTaskId() { return taskId; }
+    public void setTaskId(UUID taskId) { this.taskId = taskId; }
 
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
