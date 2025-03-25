@@ -17,23 +17,33 @@ public class RemarkEntity {
             @JoinColumn(name = "taskId", referencedColumnName = "taskId"),
             @JoinColumn(name = "userId", referencedColumnName = "userId")
     })
-    private AssignmentEntity assignment; // Link to the assignment
+    private AssignmentEntity assignment;
 
     @Column(nullable = false)
     private String comment;
 
+    @Column(nullable = false)
+    private String authorId;
+
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
 
-
     public RemarkEntity() {}
 
-    public RemarkEntity(AssignmentEntity assignment, String comment) {
+
+    public RemarkEntity(AssignmentEntity assignment, String comment, String authorId) {
         this.assignment = assignment;
         this.comment = comment;
+        this.authorId = authorId;
         this.createdAt = LocalDateTime.now();
     }
 
+
+    public RemarkEntity(String comment, String authorId) {
+        this.comment = comment;
+        this.authorId = authorId;
+        this.createdAt = LocalDateTime.now();
+    }
 
     public UUID getRemarkId() { return remarkId; }
     public void setRemarkId(UUID remarkId) { this.remarkId = remarkId; }
@@ -43,6 +53,9 @@ public class RemarkEntity {
 
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
+
+    public String getAuthorId() { return authorId; }
+    public void setAuthorId(String authorId) { this.authorId = authorId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
