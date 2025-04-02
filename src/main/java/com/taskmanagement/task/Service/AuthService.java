@@ -48,4 +48,5 @@ public class AuthService {
             throw new RuntimeException("Logout failed: " + e.getMessage());
         }
     }
+
 }

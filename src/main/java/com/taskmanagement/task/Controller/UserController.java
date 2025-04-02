@@ -10,11 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,6 +26,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping
     @Transactional
@@ -61,32 +65,55 @@ public class UserController {
             @RequestHeader("Authorization") String token) throws IOException {
 
         String currentUserId = userDetails.getUsername();
+        Users user = userService.getUserById(currentUserId);
 
 
         if (email != null && !email.isEmpty()) {
-            Users user = userService.getUserById(currentUserId);
             user.setEmail(email);
-            userService.updateUser(user);
         }
 
 
-        if ((currentPassword != null && newPassword != null) || (photo != null && !photo.isEmpty())) {
-            boolean isUpdated = userService.validateAndUpdatePassword(
-                    currentUserId, currentPassword, newPassword, token.replace("Bearer ", ""), photo);
+        if (currentPassword != null && newPassword != null) {
 
-            if (isUpdated) {
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new ApiResponse("error", 400, "Current password is incorrect", null)
+                );
+            }
+
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+
+
+            if (user.isFirstLogin()) {
+                user.setFirstLogin(false);
+            }
+
+            userService.updateUser(user);
+
+
+            if (user.isFirstLogin()) {
                 return ResponseEntity.ok(new ApiResponse(
-                        "success", 200, "Profile updated successfully.", null
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(
-                        "error", 400, "Current password is incorrect.", null
+                        "success",
+                        200,
+                        "First time password change successful. Please login again.",
+                        Map.of("requireReauthentication", true)
                 ));
             }
+
+            return ResponseEntity.ok(new ApiResponse(
+                    "success", 200, "Password changed successfully", null
+            ));
         }
 
+
+        if (photo != null && !photo.isEmpty()) {
+            user.setPhoto(photo.getBytes());
+        }
+
+        userService.updateUser(user);
         return ResponseEntity.ok(new ApiResponse(
-                "success", 200, "Profile updated successfully.", null
+                "success", 200, "Profile updated successfully", null
         ));
     }
 
