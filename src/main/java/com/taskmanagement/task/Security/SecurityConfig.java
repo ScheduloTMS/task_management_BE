@@ -38,8 +38,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/tasks/{task_id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tasks/profile").authenticated()
                         .requestMatchers("/api/assignments/**").authenticated()
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/assignments/{taskId}/assign").hasRole("MENTOR")
                         .requestMatchers("/api/assignments").hasRole("STUDENT")
                         .requestMatchers(HttpMethod.PUT,"/api/assignments").hasRole("MENTOR")

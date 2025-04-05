@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,15 +32,15 @@ public class UserController {
 
     @PostMapping
     @Transactional
+    @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse> createUser(@RequestBody UserDTO userDTO,
                                                   @AuthenticationPrincipal UserDetails userDetails) {
-        Users currentUser = userService.getUserById(userDetails.getUsername());
+        Users currentUser = userService.getUserByEmail(userDetails.getUsername());
         if (!"MENTOR".equals(currentUser.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                     new ApiResponse("error", 403, "Only mentors can create users.", null)
             );
         }
-
 
         if (userService.isUserExists(userDTO.getUserId(), userDTO.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
@@ -53,76 +54,65 @@ public class UserController {
         );
     }
 
-
     @PutMapping("/profile")
     @Transactional
     public ResponseEntity<ApiResponse> updateProfile(
-            @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam(value = "currentPassword", required = false) String currentPassword,
             @RequestParam(value = "newPassword", required = false) String newPassword,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestHeader("Authorization") String token) throws IOException {
 
-        String currentUserId = userDetails.getUsername();
-        Users user = userService.getUserById(currentUserId);
+        String currentUserEmail = userDetails.getUsername();
+        Users user = userService.getUserByEmail(currentUserEmail);
 
-
-        if (email != null && !email.isEmpty()) {
-            user.setEmail(email);
-        }
-
+        boolean passwordChanged = false;
 
         if (currentPassword != null && newPassword != null) {
-
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         new ApiResponse("error", 400, "Current password is incorrect", null)
                 );
             }
 
-
             user.setPassword(passwordEncoder.encode(newPassword));
-
+            passwordChanged = true;
 
             if (user.isFirstLogin()) {
                 user.setFirstLogin(false);
             }
-
-            userService.updateUser(user);
-
-
-            if (user.isFirstLogin()) {
-                return ResponseEntity.ok(new ApiResponse(
-                        "success",
-                        200,
-                        "First time password change successful. Please login again.",
-                        Map.of("requireReauthentication", true)
-                ));
-            }
-
-            return ResponseEntity.ok(new ApiResponse(
-                    "success", 200, "Password changed successfully", null
-            ));
         }
-
 
         if (photo != null && !photo.isEmpty()) {
             user.setPhoto(photo.getBytes());
         }
 
         userService.updateUser(user);
+
+        if (passwordChanged) {
+            return ResponseEntity.ok(new ApiResponse(
+                    "success",
+                    200,
+                    user.isFirstLogin()
+                            ? "Password changed successfully"
+                            : "First-time password update successful. Please login again.",
+                    Map.of("requireReauthentication", !user.isFirstLogin())
+            ));
+        }
+
         return ResponseEntity.ok(new ApiResponse(
                 "success", 200, "Profile updated successfully", null
         ));
     }
 
+
     @DeleteMapping("/{userId}")
     @Transactional
+    @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable String userId,
                                                   @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Users currentUser = userService.getUserById(userDetails.getUsername());
+            Users currentUser = userService.getUserByEmail(userDetails.getUsername());
             if (!"MENTOR".equals(currentUser.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                         new ApiResponse("error", 403, "Only mentors can delete users.", null)
@@ -140,21 +130,18 @@ public class UserController {
         }
     }
 
-
-
-
     @GetMapping("/profile")
     @Transactional
     public ResponseEntity<ApiResponse> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
-        Users user = userService.getUserById(userDetails.getUsername());
+        Users user = userService.getUserByEmail(userDetails.getUsername());
         return ResponseEntity.ok(new ApiResponse(
                 "success", 200, "User profile retrieved successfully.", mapToUserDTO(user)
         ));
     }
 
-
     @GetMapping
     @Transactional
+    @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse> getAllUsers() {
         List<UserDTO> userDTOs = userService.getAllUsers().stream()
                 .map(this::mapToUserDTO)
@@ -164,7 +151,6 @@ public class UserController {
                 "success", 200, "All users retrieved successfully.", userDTOs
         ));
     }
-
 
     private UserDTO mapToUserDTO(Users user) {
         UserDTO userDTO = new UserDTO();

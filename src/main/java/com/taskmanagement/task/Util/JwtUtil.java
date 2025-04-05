@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -18,35 +20,50 @@ public class JwtUtil {
 
     private final Set<String> tokenBlacklist = new HashSet<>();
 
-
     @Value("${jwt.secret.key}")
     public void setSecretKey(String secret) {
         this.SECRET_KEY = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String userId) {
+
+    public String generateToken(String role, String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
         return Jwts.builder()
-                .setSubject(userId)
+                .setClaims(claims)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .signWith(SECRET_KEY)
                 .compact();
     }
 
-    public String extractUserId(String token) {
-        return getClaims(token).getSubject();
+
+    public Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
-    public Boolean validateToken(String token, String userId) {
-        final String extractedUserId = extractUserId(token);
 
+    public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
+
+    public Boolean validateToken(String token, String email) {
+        final String extractedEmail = extractUsername(token);
         if (isTokenBlacklisted(token)) {
             return false;
         }
-        return (extractedUserId.equals(userId) && !isTokenExpired(token));
+        return (extractedEmail.equals(email) && !isTokenExpired(token));
     }
-
-
 
     public void blacklistToken(String token) {
         tokenBlacklist.add(token);
@@ -57,14 +74,6 @@ public class JwtUtil {
     }
 
     private boolean isTokenExpired(String token) {
-        return getClaims(token).getExpiration().before(new Date());
-    }
-
-    private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return extractAllClaims(token).getExpiration().before(new Date());
     }
 }

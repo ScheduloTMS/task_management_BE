@@ -23,19 +23,20 @@ public class AuthService {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Transactional
-    public String login(String userId, String password) {
+    public String login(String email, String password) {
         try {
-            Optional<Users> user = userRepository.findByUserId(userId);
+            Optional<Users> user = userRepository.findByEmailAndDeletedAtIsNull(email);
 
-            if (user.isEmpty() || user.get().getDeletedAt() != null) {
+            if (user.isEmpty()) {
                 throw new RuntimeException("User does not exist or has been deleted");
             }
 
             if (passwordEncoder.matches(password, user.get().getPassword())) {
-                return jwtUtil.generateToken(userId);
+                return jwtUtil.generateToken(  user.get().getRole(),user.get().getEmail());
+
             }
 
-            throw new RuntimeException("Invalid userId or password");
+            throw new RuntimeException("Invalid email or password");
         } catch (Exception e) {
             throw new RuntimeException("Login failed: " + e.getMessage());
         }
@@ -48,5 +49,4 @@ public class AuthService {
             throw new RuntimeException("Logout failed: " + e.getMessage());
         }
     }
-
 }

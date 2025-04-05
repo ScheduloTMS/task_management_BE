@@ -31,21 +31,11 @@ public class AuthController {
     public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest loginRequest) {
         try {
 
-            String token = authService.login(loginRequest.getUserId(), loginRequest.getPassword());
-
-
-            Users user = userService.getUserById(loginRequest.getUserId());
+            String token = authService.login(loginRequest.getEmail(), loginRequest.getPassword());
+            Users user = userService.getUserByEmail(loginRequest.getEmail());
 
 
             boolean isFirstLogin = user.isFirstLogin();
-
-
-            if (!isFirstLogin) {
-
-                user.setFirstLogin(false);
-                userService.updateUser(user);
-            }
-
 
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("token", token);

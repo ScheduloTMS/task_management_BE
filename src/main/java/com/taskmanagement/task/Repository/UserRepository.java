@@ -22,4 +22,7 @@ public interface UserRepository extends JpaRepository<Users, String> {
     boolean existsByUserIdOrEmail(@Param("userId") String userId, @Param("email") String email);
 
     Optional<Users> findByUserIdAndDeletedAtIsNull(String userId);
+
+    Optional<Users> findByEmailAndDeletedAtIsNull(String email);
+
 }
