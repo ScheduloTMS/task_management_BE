@@ -60,6 +60,7 @@ public class UserController {
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam(value = "currentPassword", required = false) String currentPassword,
             @RequestParam(value = "newPassword", required = false) String newPassword,
+            @RequestParam(value = "confirmPassword", required = false) String confirmPassword,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestHeader("Authorization") String token) throws IOException {
 
@@ -68,7 +69,14 @@ public class UserController {
 
         boolean passwordChanged = false;
 
-        if (currentPassword != null && newPassword != null) {
+        if (currentPassword != null && newPassword != null && confirmPassword != null) {
+
+            if (!newPassword.equals(confirmPassword)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new ApiResponse("error", 400, "New password and confirm password do not match", null)
+                );
+            }
+
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         new ApiResponse("error", 400, "Current password is incorrect", null)
@@ -83,6 +91,7 @@ public class UserController {
             }
         }
 
+
         if (photo != null && !photo.isEmpty()) {
             user.setPhoto(photo.getBytes());
         }
@@ -95,7 +104,7 @@ public class UserController {
                     200,
                     user.isFirstLogin()
                             ? "Password changed successfully"
-                            : "First-time password update successful. Please login again.",
+                            : "Password update successful. Please login again.",
                     Map.of("requireReauthentication", !user.isFirstLogin())
             ));
         }
