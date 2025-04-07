@@ -87,7 +87,7 @@ public class TaskController {
             if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MENTOR"))) {
                 task = taskService.getTaskByIdForUser(taskId, userDetails.getUsername());
             } else {
-                if (!assignmentService.isStudentAssignedToTask(taskId, userDetails.getUsername())) {
+                if (assignmentService.isStudentAssignedToTask(taskId, userDetails.getUsername())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(new ApiResponse("error", 403, "You are not assigned to this task", null));
                 }

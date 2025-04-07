@@ -72,12 +72,10 @@ public class AssignmentService {
         return assignmentRepository.findById(assignmentId);
     }
 
-
-
-    @Transactional(readOnly = true)
     public boolean isStudentAssignedToTask(UUID taskId, String userId) {
         return !assignmentRepository.existsById(new AssignmentId(taskId, userId));
     }
+
 
     @Transactional(readOnly = true)
     public boolean hasStudentSubmittedFile(UUID taskId, String userId) {
@@ -93,6 +91,15 @@ public class AssignmentService {
                 .filter(a -> a.getId().getUserId().equals(studentId))
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public String getUserIdByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email))
+                .getUserId();
+    }
+
+
 
 
     @Transactional

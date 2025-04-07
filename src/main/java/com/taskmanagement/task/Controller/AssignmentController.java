@@ -71,7 +71,8 @@ public class AssignmentController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         try {
-            String userId = userDetails.getUsername();
+            String email = userDetails.getUsername();
+            String userId = assignmentService.getUserIdByEmail(email);
 
             if (assignmentService.isStudentAssignedToTask(taskId, userId)) {
                 ApiResponse response = new ApiResponse(
@@ -151,7 +152,8 @@ public class AssignmentController {
             @PathVariable UUID taskId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        String userId = userDetails.getUsername();
+        String email = userDetails.getUsername();
+        String userId = assignmentService.getUserIdByEmail(email);
 
         try {
             Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(userId, taskId);
@@ -191,5 +193,7 @@ public class AssignmentController {
                     ));
         }
     }
+
+
 
 }

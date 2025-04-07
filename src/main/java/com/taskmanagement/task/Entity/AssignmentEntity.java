@@ -26,6 +26,8 @@ public class AssignmentEntity {
     @Column(nullable = true)
     private LocalDateTime deletedAt;
 
+
+
     @ManyToOne
     @JoinColumn(insertable = false, updatable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
