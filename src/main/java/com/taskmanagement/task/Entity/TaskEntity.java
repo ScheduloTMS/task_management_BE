@@ -12,6 +12,7 @@ import java.util.UUID;
 public class TaskEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "task_id")
     private UUID taskId;
 
     @NotNull(message = "Title cannot be null")

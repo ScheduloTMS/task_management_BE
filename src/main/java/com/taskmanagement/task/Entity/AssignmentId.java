@@ -1,12 +1,17 @@
 package com.taskmanagement.task.Entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.UUID;
 
 @Embeddable
 public class AssignmentId implements Serializable {
+
+    @Column(name = "task_id")
     private UUID taskId;
+
+    @Column(name = "user_id")
     private String userId;
 
     public AssignmentId() {}

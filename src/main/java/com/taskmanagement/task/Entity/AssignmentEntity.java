@@ -29,10 +29,16 @@ public class AssignmentEntity {
 
 
     @ManyToOne
-    @JoinColumn(insertable = false, updatable = false)
+    @MapsId("taskId")
+    @JoinColumn(name = "task_id", referencedColumnName = "task_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private TaskEntity task;
 
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id")
+    private Users student;
 
 
     public AssignmentEntity() {}
@@ -44,6 +50,15 @@ public class AssignmentEntity {
         this.submittedAt = LocalDateTime.now();
         this.score = score;
         this.updatedAt = null;
+
+    }
+
+    public Users getStudent() {
+        return student;
+    }
+
+    public void setStudent(Users student) {
+        this.student = student;
     }
 
 
@@ -71,4 +86,13 @@ public class AssignmentEntity {
     public void markUpdated() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public TaskEntity getTask() {
+        return task;
+    }
+
+    public void setTask(TaskEntity task) {
+        this.task = task;
+    }
+
 }

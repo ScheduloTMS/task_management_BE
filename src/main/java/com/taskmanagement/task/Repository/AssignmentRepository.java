@@ -2,6 +2,7 @@ package com.taskmanagement.task.Repository;
 
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.AssignmentId;
+import com.taskmanagement.task.Entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,10 @@ public interface AssignmentRepository extends JpaRepository<AssignmentEntity, As
 
     @Query("SELECT a FROM AssignmentEntity a WHERE a.id.taskId = :taskId AND a.deletedAt IS NULL")
     List<AssignmentEntity> findAllById_TaskId(@Param("taskId") UUID taskId);
+
+    List<AssignmentEntity> findByIdTaskId(UUID taskId);
+
+    Optional<AssignmentEntity> findByIdTaskIdAndIdUserId(UUID taskId, String userId);
+
+    List<AssignmentEntity> findById_UserIdAndDeletedAtIsNull(String userId);
 }

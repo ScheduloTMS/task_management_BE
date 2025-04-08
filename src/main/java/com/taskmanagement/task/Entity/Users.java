@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 public class Users {
     @Id
+    @Column(name = "user_id")
     private String userId;
 
     private String name;

@@ -14,10 +14,10 @@ public class RemarkEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "taskId", referencedColumnName = "taskId"),
-            @JoinColumn(name = "userId", referencedColumnName = "userId")
+            @JoinColumn(name = "task_id", referencedColumnName = "task_id"),
+            @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     })
-    private AssignmentEntity assignment; // Link to the assignment
+    private AssignmentEntity assignment;
 
     @Column(nullable = false)
     private String comment;
