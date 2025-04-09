@@ -25,4 +25,10 @@ public interface AssignmentRepository extends JpaRepository<AssignmentEntity, As
     Optional<AssignmentEntity> findByIdTaskIdAndIdUserId(UUID taskId, String userId);
 
     List<AssignmentEntity> findById_UserIdAndDeletedAtIsNull(String userId);
+
+
+
+    Optional<AssignmentEntity> findByTask_TaskIdAndStudent_UserId(UUID taskId, String userId);
+
+
 }

@@ -153,35 +153,15 @@ public class AssignmentController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String email = userDetails.getUsername();
-        String userId = assignmentService.getUserIdByEmail(email);
-
         try {
-            Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(userId, taskId);
+            AssignmentResponse response = assignmentService.getAssignmentDetails(taskId, email);
 
-            if (assignment.isPresent()) {
-                AssignmentEntity assignmentEntity = assignment.get();
-
-                return ResponseEntity.ok(new ApiResponse(
-                        "success",
-                        200,
-                        "Assignment retrieved successfully",
-                        new AssignmentResponse(
-                                assignmentEntity.getId().getTaskId(),
-                                assignmentEntity.getId().getUserId(),
-                                assignmentEntity.getSubmissionStatus(),
-                                assignmentEntity.getScore(),
-                                assignmentEntity.getFileUploads() != null ? "File attached" : "No file"
-                        )
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse(
-                                "error",
-                                404,
-                                "Assignment not found or not assigned to user",
-                                null
-                        ));
-            }
+            return ResponseEntity.ok(new ApiResponse(
+                    "success",
+                    200,
+                    "Assignment retrieved successfully",
+                    response
+            ));
 
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -193,7 +173,6 @@ public class AssignmentController {
                     ));
         }
     }
-
 
 
 }

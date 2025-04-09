@@ -8,8 +8,7 @@ public class AssignmentResponse {
     private String submissionStatus;
     private String score;
     private String fileStatus;
-    private String submittedDate;
-    private String profilePhoto;
+
 
     public AssignmentResponse(UUID taskId, String userId, String submissionStatus, String score, String fileStatus) {
         this.taskId = taskId;

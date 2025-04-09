@@ -2,8 +2,10 @@ package com.taskmanagement.task.Service;
 
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.TaskEntity;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.AssignmentRepository;
 import com.taskmanagement.task.Repository.TaskRepository;
+import com.taskmanagement.task.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,9 @@ public class TaskService {
 
     @Autowired
     private AssignmentRepository assignmentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public TaskEntity getTaskById(UUID taskId) {
         try {
@@ -70,6 +75,9 @@ public class TaskService {
             throw new RuntimeException("Failed to retrieve tasks for user: " + e.getMessage());
         }
     }
+
+
+
 
     @Transactional
     public TaskEntity updateTask(UUID taskId, String title, String description, LocalDate dueDate, byte[] fileData, String username) {

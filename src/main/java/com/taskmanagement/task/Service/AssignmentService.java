@@ -1,5 +1,6 @@
 package com.taskmanagement.task.Service;
 
+import com.taskmanagement.task.DTO.AssignmentResponse;
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Entity.TaskEntity;
@@ -104,7 +105,6 @@ public class AssignmentService {
 
 
 
-
     @Transactional
     public void assignStudents(UUID taskId, List<String> studentIds, String mentorId) throws AccessDeniedException {
         TaskEntity task = taskRepository.findById(taskId)
@@ -146,9 +146,42 @@ public class AssignmentService {
     }
 
 
-
     public AssignmentEntity getAssignmentByTaskAndStudent(UUID taskId, String userId) {
         return assignmentRepository.findByIdTaskIdAndIdUserId(taskId, userId).orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public AssignmentResponse getAssignmentDetails(UUID taskId, String email) {
+        Users user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        String userId = user.getUserId(); // still needed for student assignments
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found with ID: " + taskId));
+
+        // ✅ Check if the current user (mentor) created this task using email
+        if (task.getCreatedBy().equals(email)) {
+            return new AssignmentResponse(
+                    taskId,
+                    userId,
+                    null, // mentors don't need submission status
+                    null,
+                    null  // mentors don't need file info
+            );
+        }
+
+        // ✅ Else, assume it's a student who must be assigned
+        AssignmentId assignmentId = new AssignmentId(taskId, userId);
+        AssignmentEntity assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found or you are not assigned to this task"));
+
+        return new AssignmentResponse(
+                assignment.getId().getTaskId(),
+                assignment.getId().getUserId(),
+                assignment.getSubmissionStatus(),
+                assignment.getScore(),
+                assignment.getFileUploads() != null ? "File attached" : "No file"
+        );
     }
 
 
