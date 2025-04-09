@@ -14,6 +14,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -22,14 +27,30 @@ public class SecurityConfig {
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // your frontend URL
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true); // if using cookies/auth
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers(HttpMethod.POST,"/api/users").hasRole("MENTOR")
-                        .requestMatchers(HttpMethod.GET,"/api/users").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.GET,"/api/users").permitAll()
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
                         .requestMatchers("/api/users/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/tasks").hasRole("MENTOR")
@@ -47,7 +68,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/remarks/tasks/{taskId}").authenticated()
                         .requestMatchers("/api/remarks/{remarkId}").authenticated()
                         .requestMatchers("/api/notes/**").authenticated()
-                        .requestMatchers( "/ws/**").permitAll()
+                        .requestMatchers("/ws").permitAll()
+                        .requestMatchers("/ws/**","/ws/info").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
