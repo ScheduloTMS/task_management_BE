@@ -13,5 +13,4 @@ public interface TaskRepository extends JpaRepository<TaskEntity, UUID> {
     List<TaskEntity> findByCreatedByAndDeletedAtIsNull(String createdBy);
     Optional<TaskEntity> findByTaskIdAndCreatedBy(UUID taskId, String createdBy);
     Optional<TaskEntity> findByTaskId(UUID taskId);
-    boolean existsByTitleIgnoreCaseAndDescriptionIgnoreCase(String title, String description);
 }

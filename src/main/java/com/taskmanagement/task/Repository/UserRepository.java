@@ -12,6 +12,7 @@ public interface UserRepository extends JpaRepository<Users, String> {
 
     Optional<Users> findByUserId(String userId);
 
+
     @Query("SELECT u.userId FROM Users u WHERE u.userId LIKE :rolePrefix% ORDER BY u.userId DESC LIMIT 1")
     String findLastUserIdByRole(@Param("rolePrefix") String rolePrefix);
 
@@ -22,4 +23,8 @@ public interface UserRepository extends JpaRepository<Users, String> {
     boolean existsByUserIdOrEmail(@Param("userId") String userId, @Param("email") String email);
 
     Optional<Users> findByUserIdAndDeletedAtIsNull(String userId);
+
+
+    Optional<Users> findByEmailAndDeletedAtIsNull(String email);
+
 }

@@ -1,6 +1,8 @@
 package com.taskmanagement.task.Controller;
 
 import com.taskmanagement.task.DTO.ApiResponse;
+import com.taskmanagement.task.DTO.AssignmentResponse;
+import com.taskmanagement.task.DTO.TaskWithStatusDTO;
 import com.taskmanagement.task.Entity.TaskEntity;
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Service.AssignmentService;
@@ -43,20 +45,6 @@ public class TaskController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         try {
-            LocalDate createdAt = LocalDate.now();
-
-
-            if (!dueDate.isAfter(createdAt)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse("error", 400, "Due date must be after the created date", null));
-            }
-
-
-            if (taskService.isDuplicateTask(title, description)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(new ApiResponse("error", 409, "Task with the same title and description already exists.", null));
-            }
-
             byte[] fileData = (file != null) ? file.getBytes() : null;
             TaskEntity createdTask = taskService.createTask(title, description, dueDate, fileData, userDetails.getUsername());
 
@@ -71,50 +59,164 @@ public class TaskController {
         }
     }
 
-
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getAllTasks(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            List<TaskEntity> tasks;
+            String email = userDetails.getUsername();
+            String role = userDetails.getAuthorities().stream()
+                    .map(a -> a.getAuthority())
+                    .filter(auth -> auth.startsWith("ROLE_"))
+                    .findFirst().orElse("ROLE_STUDENT");
 
-            if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MENTOR"))) {
-                tasks = taskService.getAllTasksForUser(userDetails.getUsername());
+            List<TaskWithStatusDTO> responseList;
+
+            if (role.equals("ROLE_MENTOR")) {
+                List<TaskEntity> tasks = taskService.getAllTasksForUser(email);
+
+                responseList = tasks.stream().map(task -> {
+                    List<AssignmentEntity> assignments = assignmentService.getAssignmentsByTaskId(task.getTaskId());
+
+                    long total = assignments.size();
+                    long reviewed = assignments.stream().filter(a -> a.getScore() != null).count();
+                    long overdue = assignments.stream().filter(a ->
+                            a.getFileUploads() == null &&
+                                    task.getDueDate().isBefore(LocalDate.now())
+                    ).count();
+
+                    String status;
+                    if (total == 0) {
+                        status = "To Do";
+                    } else if (overdue > 0) {
+                        status = "Overdue";
+                    } else if (reviewed == total) {
+                        status = "Completed";
+                    } else if (reviewed > 0) {
+                        status = "In Progress";
+                    } else {
+                        status = "To Do";
+                    }
+
+                    return new TaskWithStatusDTO(task, status);
+                }).collect(Collectors.toList());
+
             } else {
-                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(userDetails.getUsername());
-                tasks = assignments.stream()
-                        .map(a -> taskService.getTaskById(a.getId().getTaskId()))
-                        .collect(Collectors.toList());
+                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(email);
+
+                responseList = assignments.stream().map(assignment -> {
+                    TaskEntity task = taskService.getTaskById(assignment.getId().getTaskId());
+
+                    String status;
+                    if (assignment.getFileUploads() == null && task.getDueDate().isBefore(LocalDate.now())) {
+                        status = "Overdue";
+                    } else if (assignment.getFileUploads() == null) {
+                        status = "To Do";
+                    } else if (assignment.getScore() != null) {
+                        status = "Completed";
+                    } else {
+                        status = "In Progress";
+                    }
+
+                    return new TaskWithStatusDTO(task, status);
+                }).collect(Collectors.toList());
             }
 
-            return ResponseEntity.ok(new ApiResponse("success", 200, "Tasks retrieved successfully", tasks));
+            return ResponseEntity.ok(new ApiResponse("success", 200, "Tasks retrieved successfully", responseList));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
     }
+
 
     @GetMapping("/{taskId}")
     public ResponseEntity<ApiResponse> getTaskById(@PathVariable UUID taskId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
         try {
             TaskEntity task;
+            String role = userDetails.getAuthorities().stream()
+                    .map(a -> a.getAuthority())
+                    .filter(auth -> auth.startsWith("ROLE_"))
+                    .findFirst().orElse("ROLE_STUDENT");
 
-            if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MENTOR"))) {
-                task = taskService.getTaskByIdForUser(taskId, userDetails.getUsername());
+            String email = userDetails.getUsername();
+            String status;
+
+            if (role.equals("ROLE_MENTOR")) {
+                task = taskService.getTaskByIdForUser(taskId, email);
+
+                List<AssignmentEntity> assignments = assignmentService.getAssignmentsByTaskId(task.getTaskId());
+                long total = assignments.size();
+                long reviewed = assignments.stream().filter(a -> a.getScore() != null).count();
+                long overdue = assignments.stream().filter(a ->
+                        a.getFileUploads() == null &&
+                                task.getDueDate().isBefore(LocalDate.now())
+                ).count();
+
+                if (total == 0) {
+                    status = "To Do";
+                } else if (overdue > 0) {
+                    status = "Overdue";
+                } else if (reviewed == total) {
+                    status = "Completed";
+                } else if (reviewed > 0) {
+                    status = "In Progress";
+                } else {
+                    status = "To Do";
+                }
+
+
+                List<AssignmentResponse> studentResponses = assignments.stream().map(a -> {
+                    String studentName = a.getStudent() != null ? a.getStudent().getName() : a.getId().getUserId();
+                    return new AssignmentResponse(
+                            a.getId().getTaskId(),
+                            studentName,
+                            a.getSubmissionStatus(),
+                            a.getScore(),
+                            a.getFileUploads() != null ? "Submitted" : "Not Submitted"
+                    );
+                }).toList();
+
+                TaskWithStatusDTO responseDTO = new TaskWithStatusDTO(task, status, studentResponses);
+                return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
+
             } else {
-                if (!assignmentService.isStudentAssignedToTask(taskId, userDetails.getUsername())) {
+
+                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(email);
+
+
+                if (!assignmentService.isStudentAssignedToTask(taskId, email)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(new ApiResponse("error", 403, "You are not assigned to this task", null));
                 }
+
                 task = taskService.getTaskById(taskId);
+                AssignmentEntity assignment = assignmentService.getAssignmentByTaskAndStudent(taskId, email);
+
+                if (assignment == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse("error", 404, "Assignment not found for student and task", null));
+                }
+
+                if (assignment.getFileUploads() == null && task.getDueDate().isBefore(LocalDate.now())) {
+                    status = "Overdue";
+                } else if (assignment.getFileUploads() == null) {
+                    status = "To Do";
+                } else if (assignment.getScore() != null) {
+                    status = "Completed";
+                } else {
+                    status = "In Progress";
+                }
+
+                TaskWithStatusDTO responseDTO = new TaskWithStatusDTO(task, status);
+                return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
             }
 
-            return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", task));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
     }
+
 
 
     @PutMapping("/{taskId}")
@@ -129,19 +231,7 @@ public class TaskController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         try {
-
-            TaskEntity existingTask = taskService.getTaskById(taskId);
-
-
-            if (existingTask.getDeletedAt() != null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse("error", 404, "Task already deleted", null));
-            }
-
-
             byte[] fileData = (file != null) ? file.getBytes() : null;
-
-
             TaskEntity updatedTask = taskService.updateTask(taskId, title, description, dueDate, fileData, userDetails.getUsername());
 
             return ResponseEntity.ok(new ApiResponse("success", 200, "Task updated successfully", updatedTask));
@@ -153,7 +243,6 @@ public class TaskController {
                     .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
     }
-
 
     @DeleteMapping("/{taskId}")
     @PreAuthorize("hasRole('MENTOR')")

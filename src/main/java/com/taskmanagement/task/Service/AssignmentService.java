@@ -1,8 +1,10 @@
 package com.taskmanagement.task.Service;
 
+import com.taskmanagement.task.DTO.StudentDTO;
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Entity.TaskEntity;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.AssignmentRepository;
 import com.taskmanagement.task.Repository.TaskRepository;
 import com.taskmanagement.task.Repository.UserRepository;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AssignmentService {
@@ -72,12 +75,10 @@ public class AssignmentService {
         return assignmentRepository.findById(assignmentId);
     }
 
-
-
-    @Transactional(readOnly = true)
     public boolean isStudentAssignedToTask(UUID taskId, String userId) {
         return !assignmentRepository.existsById(new AssignmentId(taskId, userId));
     }
+
 
     @Transactional(readOnly = true)
     public boolean hasStudentSubmittedFile(UUID taskId, String userId) {
@@ -88,11 +89,22 @@ public class AssignmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<AssignmentEntity> getAssignmentsForStudent(String studentId) {
-        return assignmentRepository.findAll().stream()
-                .filter(a -> a.getId().getUserId().equals(studentId))
-                .toList();
+    public List<AssignmentEntity> getAssignmentsForStudent(String email) {
+        Users user = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return assignmentRepository.findById_UserIdAndDeletedAtIsNull(user.getUserId());
     }
+
+
+    @Transactional(readOnly = true)
+    public String getUserIdByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email))
+                .getUserId();
+    }
+
+
 
 
     @Transactional
@@ -106,14 +118,11 @@ public class AssignmentService {
         }
 
         for (String studentId : studentIds) {
-            userRepository.findById(studentId)
+            Users student = userRepository.findById(studentId)
                     .filter(user -> user.getDeletedAt() == null)
                     .orElseThrow(() -> new RuntimeException("User not found or has been deleted with ID: " + studentId));
 
-
-
             AssignmentId assignmentId = new AssignmentId(taskId, studentId);
-
 
             if (assignmentRepository.existsById(assignmentId)) {
                 throw new RuntimeException("Student with ID " + studentId + " is already assigned to this task");
@@ -121,6 +130,8 @@ public class AssignmentService {
 
             AssignmentEntity assignment = new AssignmentEntity();
             assignment.setId(assignmentId);
+            assignment.setTask(task); // ✅ Important fix
+            assignment.setStudent(student); // ✅ Important fix
             assignment.setFileUploads(null);
             assignment.setSubmissionStatus("Not Submitted");
             assignment.setScore(null);
@@ -129,6 +140,32 @@ public class AssignmentService {
 
             assignmentRepository.save(assignment);
         }
+
+    }
+
+    public List<AssignmentEntity> getAssignmentsByTaskId(UUID taskId) {
+        return assignmentRepository.findByIdTaskId(taskId);
+    }
+
+
+
+    public AssignmentEntity getAssignmentByTaskAndStudent(UUID taskId, String userId) {
+        return assignmentRepository.findByIdTaskIdAndIdUserId(taskId, userId).orElse(null);
+    }
+    public List<StudentDTO> getStudentsAssignedToTask(UUID taskId, String mentorEmail) {
+        // Optional: validate that the mentor has permission to view this task
+
+        List<Users> assignedStudents = assignmentRepository.findStudentsByTaskId(taskId);
+
+        // Convert to DTOs
+        return assignedStudents.stream()
+                .map(student -> new StudentDTO(
+                        student.getUserId(),
+                        student.getName(),
+                        student.getPhoto() // base64 or file path
+
+                ))
+                .collect(Collectors.toList());
     }
 
 

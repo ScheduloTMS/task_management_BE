@@ -146,4 +146,9 @@ public class UserService {
             throw new RuntimeException("Error updating user: " + e.getMessage());
         }
     }
+
+    public Users getUserByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseThrow(() -> new RuntimeException("User not found or has been deleted"));
+    }
 }

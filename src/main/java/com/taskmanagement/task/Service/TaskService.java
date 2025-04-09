@@ -22,11 +22,14 @@ public class TaskService {
     private AssignmentRepository assignmentRepository;
 
     public TaskEntity getTaskById(UUID taskId) {
-        return taskRepository.findByTaskId(taskId)
-                .filter(task -> task.getDeletedAt() == null)
-                .orElseThrow(() -> new RuntimeException("Task not found or has been deleted"));
+        try {
+            return taskRepository.findByTaskId(taskId)
+                    .filter(task -> task.getDeletedAt() == null)
+                    .orElseThrow(() -> new RuntimeException("Task not found"));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve task: " + e.getMessage());
+        }
     }
-
 
     @Transactional
     public TaskEntity createTask(String title, String description, LocalDate dueDate, byte[] fileData, String createdBy) {
@@ -49,11 +52,15 @@ public class TaskService {
     }
 
     public TaskEntity getTaskByIdForUser(UUID taskId, String username) {
-        TaskEntity task = getTaskById(taskId);
-        if (!task.getCreatedBy().equals(username)) {
-            throw new RuntimeException("You are not authorized to access this task");
+        try {
+            TaskEntity task = getTaskById(taskId);
+            if (!task.getCreatedBy().equals(username)) {
+                throw new RuntimeException("You are not authorized to access this task");
+            }
+            return task;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve task for user: " + e.getMessage());
         }
-        return task;
     }
 
     public List<TaskEntity> getAllTasksForUser(String username) {
@@ -63,17 +70,14 @@ public class TaskService {
             throw new RuntimeException("Failed to retrieve tasks for user: " + e.getMessage());
         }
     }
-    public boolean isDuplicateTask(String title, String description) {
-        return taskRepository.existsByTitleIgnoreCaseAndDescriptionIgnoreCase(title, description);
-    }
 
     @Transactional
     public TaskEntity updateTask(UUID taskId, String title, String description, LocalDate dueDate, byte[] fileData, String username) {
         try {
-            TaskEntity task = getTaskById(taskId);
+            TaskEntity task = getTaskByIdForUser(taskId, username);
 
             if (task.getDeletedAt() != null) {
-                throw new RuntimeException("Task already deleted");
+                throw new RuntimeException("Cannot update a deleted task");
             }
 
             task.setTitle(title);
@@ -89,25 +93,29 @@ public class TaskService {
         }
     }
 
-
     @Transactional
     public void deleteTask(UUID taskId, String username) {
-        TaskEntity task = getTaskByIdForUser(taskId, username);
+        try {
+            TaskEntity task = getTaskByIdForUser(taskId, username);
 
-        if (task.getDeletedAt() != null) {
-            throw new RuntimeException("Task already deleted");
+            if (task.getDeletedAt() != null) {
+                throw new RuntimeException("Task already deleted");
+            }
+
+            task.setDeletedAt(java.time.LocalDateTime.now());
+
+
+            List<AssignmentEntity> assignments = assignmentRepository.findAllById_TaskId(taskId);
+            for (AssignmentEntity assignment : assignments) {
+                assignment.setDeletedAt(java.time.LocalDateTime.now());
+                assignment.setUpdatedAt(java.time.LocalDateTime.now());
+                assignmentRepository.save(assignment);
+            }
+
+            taskRepository.save(task);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete task: " + e.getMessage());
         }
-
-        task.setDeletedAt(java.time.LocalDateTime.now());
-
-        List<AssignmentEntity> assignments = assignmentRepository.findAllById_TaskId(taskId);
-        for (AssignmentEntity assignment : assignments) {
-            assignment.setDeletedAt(java.time.LocalDateTime.now());
-            assignment.setUpdatedAt(java.time.LocalDateTime.now());
-            assignmentRepository.save(assignment);
-        }
-
-        taskRepository.save(task);
     }
 
 }

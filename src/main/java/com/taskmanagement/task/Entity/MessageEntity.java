@@ -18,12 +18,13 @@ public class MessageEntity {
     private UUID msgId;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id", referencedColumnName = "userId", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = false)
     private Users sender;
 
     @ManyToOne
-    @JoinColumn(name = "receiver_id", referencedColumnName = "userId", nullable = false)
+    @JoinColumn(name = "receiver_id", nullable = false)
     private Users receiver;
+
 
     @Column(nullable = false)
     private String content;
