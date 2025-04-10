@@ -5,8 +5,10 @@ import com.taskmanagement.task.DTO.AssignmentResponse;
 import com.taskmanagement.task.DTO.TaskWithStatusDTO;
 import com.taskmanagement.task.Entity.TaskEntity;
 import com.taskmanagement.task.Entity.AssignmentEntity;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Service.AssignmentService;
 import com.taskmanagement.task.Service.TaskService;
+import com.taskmanagement.task.Service.UserService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,9 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private AssignmentService assignmentService;
@@ -127,7 +132,6 @@ public class TaskController {
         }
     }
 
-
     @GetMapping("/{taskId}")
     public ResponseEntity<ApiResponse> getTaskById(@PathVariable UUID taskId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
@@ -138,11 +142,13 @@ public class TaskController {
                     .filter(auth -> auth.startsWith("ROLE_"))
                     .findFirst().orElse("ROLE_STUDENT");
 
-            String email = userDetails.getUsername();
+            // Fetch userId (e.g., ST001) instead of email
+            Users user = userService.findByEmail(userDetails.getUsername());
+            String userId = user.getUserId(); // assuming getId() gives you "ST001"
             String status;
 
             if (role.equals("ROLE_MENTOR")) {
-                task = taskService.getTaskByIdForUser(taskId, email);
+                task = taskService.getTaskByIdForUser(taskId, user.getEmail());
 
                 List<AssignmentEntity> assignments = assignmentService.getAssignmentsByTaskId(task.getTaskId());
                 long total = assignments.size();
@@ -164,7 +170,6 @@ public class TaskController {
                     status = "To Do";
                 }
 
-
                 List<AssignmentResponse> studentResponses = assignments.stream().map(a -> {
                     String studentName = a.getStudent() != null ? a.getStudent().getName() : a.getId().getUserId();
                     return new AssignmentResponse(
@@ -180,17 +185,16 @@ public class TaskController {
                 return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
 
             } else {
+                // For STUDENTS
 
-                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(email);
-
-
-                if (!assignmentService.isStudentAssignedToTask(taskId, email)) {
+                // Use student ID instead of email
+                if (!assignmentService.isStudentAssignedToTask(taskId, userId)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(new ApiResponse("error", 403, "You are not assigned to this task", null));
                 }
 
                 task = taskService.getTaskById(taskId);
-                AssignmentEntity assignment = assignmentService.getAssignmentByTaskAndStudent(taskId, email);
+                AssignmentEntity assignment = assignmentService.getAssignmentByTaskAndStudent(taskId, userId);
 
                 if (assignment == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -216,7 +220,6 @@ public class TaskController {
                     .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
     }
-
 
 
     @PutMapping("/{taskId}")

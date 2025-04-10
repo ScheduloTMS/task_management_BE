@@ -6,6 +6,7 @@ import com.taskmanagement.task.Repository.UserRepository;
 import com.taskmanagement.task.Util.JwtUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,14 @@ public class UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+
+    public Users findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+
 
     public boolean isUserExists(String userId, String email) {
         try {

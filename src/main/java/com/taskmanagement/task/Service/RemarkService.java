@@ -1,15 +1,16 @@
 package com.taskmanagement.task.Service;
 
 import com.taskmanagement.task.DTO.RemarkDTO;
+import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.AssignmentId;
 import com.taskmanagement.task.Entity.RemarkEntity;
-import com.taskmanagement.task.Entity.AssignmentEntity;
-import com.taskmanagement.task.Repository.RemarkRepository;
+import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.AssignmentRepository;
+import com.taskmanagement.task.Repository.RemarkRepository;
+import com.taskmanagement.task.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.List;
 import java.util.UUID;
@@ -24,12 +25,22 @@ public class RemarkService {
     @Autowired
     private AssignmentRepository assignmentRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    // Resolve userId from email
+    private String getUserIdByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .map(Users::getUserId)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
     @Transactional(readOnly = true)
-    public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String userId) {
+    public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String email) {
+        String userId = getUserIdByEmail(email);
 
         AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
-
 
         List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskIdAndAssignment_UserId(taskId, userId);
 
@@ -44,11 +55,11 @@ public class RemarkService {
     }
 
     @Transactional
-    public RemarkDTO addRemark(UUID taskId, String userId, String comment) {
+    public RemarkDTO addRemark(UUID taskId, String email, String comment) {
+        String userId = getUserIdByEmail(email);
 
         AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
-
 
         RemarkEntity remark = new RemarkEntity(assignment, comment);
         RemarkEntity savedRemark = remarkRepository.save(remark);
@@ -64,10 +75,11 @@ public class RemarkService {
     }
 
     @Transactional
-    public void deleteRemark(UUID remarkId, String userId) {
+    public void deleteRemark(UUID remarkId, String email) {
+        String userId = getUserIdByEmail(email);
+
         RemarkEntity remark = remarkRepository.findById(remarkId)
                 .orElseThrow(() -> new RuntimeException("Remark not found"));
-
 
         if (!remark.getAssignment().getId().getUserId().equals(userId)) {
             throw new RuntimeException("Permission denied: You can only delete your own remarks");

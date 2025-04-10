@@ -73,8 +73,8 @@ public class AssignmentController {
         try {
             String email = userDetails.getUsername();
             String userId = assignmentService.getUserIdByEmail(email);
-
-            if (assignmentService.isStudentAssignedToTask(taskId, userId)) {
+            System.out.println("User ID fetched for " + email + ": " + userId);
+            if (!assignmentService.isAssignedToTask(taskId, userId)) {
                 ApiResponse response = new ApiResponse(
                         "error",
                         HttpStatus.FORBIDDEN.value(),

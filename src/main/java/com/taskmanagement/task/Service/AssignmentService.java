@@ -76,7 +76,13 @@ public class AssignmentService {
     }
 
     public boolean isStudentAssignedToTask(UUID taskId, String userId) {
-        return !assignmentRepository.existsById(new AssignmentId(taskId, userId));
+        return assignmentRepository.existsById(new AssignmentId(taskId, userId));
+    }
+
+    public boolean isAssignedToTask(UUID taskId, String userId) {
+        boolean exists = assignmentRepository.existsById(new AssignmentId(taskId, userId));
+        System.out.println("Assignment exists for user " + userId + " and task " + taskId + ": " + exists);
+        return exists;
     }
 
 
