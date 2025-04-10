@@ -14,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -132,89 +133,91 @@ public class TaskController {
     public ResponseEntity<ApiResponse> getTaskById(@PathVariable UUID taskId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            TaskEntity task;
-            String role = userDetails.getAuthorities().stream()
-                    .map(a -> a.getAuthority())
-                    .filter(auth -> auth.startsWith("ROLE_"))
-                    .findFirst().orElse("ROLE_STUDENT");
-
             String email = userDetails.getUsername();
-            String status;
+            String role = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .filter(auth -> auth.startsWith("ROLE_"))
+                    .findFirst()
+                    .orElse("ROLE_STUDENT");
+
+            // First check if task exists (regardless of permissions)
+            TaskEntity task = taskService.getTaskById(taskId);
 
             if (role.equals("ROLE_MENTOR")) {
-                task = taskService.getTaskByIdForUser(taskId, email);
-
-                List<AssignmentEntity> assignments = assignmentService.getAssignmentsByTaskId(task.getTaskId());
-                long total = assignments.size();
-                long reviewed = assignments.stream().filter(a -> a.getScore() != null).count();
-                long overdue = assignments.stream().filter(a ->
-                        a.getFileUploads() == null &&
-                                task.getDueDate().isBefore(LocalDate.now())
-                ).count();
-
-                if (total == 0) {
-                    status = "To Do";
-                } else if (overdue > 0) {
-                    status = "Overdue";
-                } else if (reviewed == total) {
-                    status = "Completed";
-                } else if (reviewed > 0) {
-                    status = "In Progress";
-                } else {
-                    status = "To Do";
+                // Verify mentor is the creator of the task
+                if (!task.getCreatedBy().equals(email)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponse("error", 403,
+                                    "You are not the creator of this task", null));
                 }
 
+                // Mentor-specific logic
+                List<AssignmentEntity> assignments = assignmentService.getAssignmentsByTaskId(taskId);
+                String status = calculateMentorTaskStatus(task, assignments);
 
-                List<AssignmentResponse> studentResponses = assignments.stream().map(a -> {
-                    String studentName = a.getStudent() != null ? a.getStudent().getName() : a.getId().getUserId();
-                    return new AssignmentResponse(
-                            a.getId().getTaskId(),
-                            studentName,
-                            a.getSubmissionStatus(),
-                            a.getScore(),
-                            a.getFileUploads() != null ? "Submitted" : "Not Submitted"
-                    );
-                }).toList();
+                List<AssignmentResponse> studentResponses = assignments.stream()
+                        .map(a -> new AssignmentResponse(
+                                a.getId().getTaskId(),
+                                a.getStudent() != null ? a.getStudent().getName() : a.getId().getUserId(),
+                                a.getSubmissionStatus(),
+                                a.getScore(),
+                                a.getFileUploads() != null ? "Submitted" : "Not Submitted"
+                        ))
+                        .toList();
 
                 TaskWithStatusDTO responseDTO = new TaskWithStatusDTO(task, status, studentResponses);
-                return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
-
+                return ResponseEntity.ok(new ApiResponse("success", 200,
+                        "Task retrieved successfully", responseDTO));
             } else {
-
-                List<AssignmentEntity> assignments = assignmentService.getAssignmentsForStudent(email);
-
-
+                // Student access logic
                 if (!assignmentService.isStudentAssignedToTask(taskId, email)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(new ApiResponse("error", 403, "You are not assigned to this task", null));
+                            .body(new ApiResponse("error", 403,
+                                    "You are not assigned to this task", null));
                 }
 
-                task = taskService.getTaskById(taskId);
                 AssignmentEntity assignment = assignmentService.getAssignmentByTaskAndStudent(taskId, email);
-
                 if (assignment == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new ApiResponse("error", 404, "Assignment not found for student and task", null));
+                            .body(new ApiResponse("error", 404,
+                                    "Assignment not found", null));
                 }
 
-                if (assignment.getFileUploads() == null && task.getDueDate().isBefore(LocalDate.now())) {
-                    status = "Overdue";
-                } else if (assignment.getFileUploads() == null) {
-                    status = "To Do";
-                } else if (assignment.getScore() != null) {
-                    status = "Completed";
-                } else {
-                    status = "In Progress";
-                }
-
+                String status = calculateStudentTaskStatus(task, assignment);
                 TaskWithStatusDTO responseDTO = new TaskWithStatusDTO(task, status);
-                return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
+                return ResponseEntity.ok(new ApiResponse("success", 200,
+                        "Task retrieved successfully", responseDTO));
             }
-
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse("error", 404, e.getMessage(), null));
         }
+    }
+
+    // Helper method for mentor status calculation
+    private String calculateMentorTaskStatus(TaskEntity task, List<AssignmentEntity> assignments) {
+        if (assignments.isEmpty()) {
+            return "To Do";
+        }
+
+        long total = assignments.size();
+        long reviewed = assignments.stream().filter(a -> a.getScore() != null).count();
+        long overdue = assignments.stream().filter(a ->
+                a.getFileUploads() == null && task.getDueDate().isBefore(LocalDate.now())
+        ).count();
+
+        if (overdue > 0) return "Overdue";
+        if (reviewed == total) return "Completed";
+        if (reviewed > 0) return "In Progress";
+        return "To Do";
+    }
+
+    // Helper method for student status calculation
+    private String calculateStudentTaskStatus(TaskEntity task, AssignmentEntity assignment) {
+        if (assignment.getFileUploads() == null) {
+            return task.getDueDate().isBefore(LocalDate.now()) ? "Overdue" : "To Do";
+        }
+        return assignment.getScore() != null ? "Completed" : "In Progress";
     }
 
 

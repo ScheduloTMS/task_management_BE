@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers(HttpMethod.POST,"/api/users").hasRole("MENTOR")
-                        .requestMatchers(HttpMethod.GET,"/api/users").hasRole("MENTOR")
+                        .requestMatchers(HttpMethod.GET,"/api/users").authenticated()
                         .requestMatchers("/api/users/delete/**").hasRole("MENTOR")
                         .requestMatchers("/api/users/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/tasks").hasRole("MENTOR")
@@ -68,6 +68,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/remarks/tasks/{taskId}").authenticated()
                         .requestMatchers("/api/remarks/{remarkId}").authenticated()
                         .requestMatchers("/api/notes/**").authenticated()
+                        .requestMatchers("/ws/**","/ws","/ws/info").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/messages/history").authenticated()
+                        .requestMatchers("/app").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -51,16 +51,26 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     .orElse(null);
 
             if (user != null && user.isFirstLogin()) {
-
                 String path = request.getRequestURI();
                 String method = request.getMethod();
-                if (!(path.equals("/api/auth/login") || (path.equals("/api/users/profile") && method.equals("PUT")))){
+                boolean isAllowedPath = (path.equals("/api/auth/login")) ||
+                        (path.equals("/api/users/profile") && method.equals("PUT")) ||
+                        (path.equals("/api/messages/history") && method.equals("GET"));
+
+                if (!isAllowedPath) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":403,\"message\":\"Change your password to continue\",\"body\":null}");
+                    return;
+                }
+                {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"status\":403,\"message\":\"Change your password to continue\",\"body\":null}");
                     return;
                 }
             }
+
 
             UserDetails userDetails = this.customUserDetailsService.loadUserByUsername(email);
 

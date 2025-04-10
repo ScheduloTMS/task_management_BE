@@ -150,7 +150,7 @@ public class UserController {
 
     @GetMapping
     @Transactional
-    @PreAuthorize("hasRole('MENTOR')")
+
     public ResponseEntity<ApiResponse> getAllUsers() {
         List<UserDTO> userDTOs = userService.getAllUsers().stream()
                 .map(this::mapToUserDTO)

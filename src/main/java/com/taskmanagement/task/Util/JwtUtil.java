@@ -26,9 +26,11 @@ public class JwtUtil {
     }
 
 
-    public String generateToken(String role, String email) {
+    public String generateToken(String role, String email, String userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("userId", userId);
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
@@ -37,6 +39,7 @@ public class JwtUtil {
                 .signWith(SECRET_KEY)
                 .compact();
     }
+
 
 
     public Claims extractAllClaims(String token) {
@@ -55,6 +58,11 @@ public class JwtUtil {
     public String extractRole(String token) {
         return extractAllClaims(token).get("role", String.class);
     }
+
+    public String extractUserId(String token) {
+        return extractAllClaims(token).get("userId", String.class);
+    }
+
 
 
     public Boolean validateToken(String token, String email) {

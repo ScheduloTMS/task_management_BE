@@ -27,14 +27,16 @@ public class AuthService {
         try {
             Optional<Users> user = userRepository.findByEmailAndDeletedAtIsNull(email);
 
-            if (user.isEmpty()) {
-                throw new RuntimeException("User does not exist or has been deleted");
+            if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
+                Users actualUser = user.get();
+
+                return jwtUtil.generateToken(
+                        actualUser.getRole(),
+                        actualUser.getEmail(),
+                        actualUser.getUserId()
+                );
             }
 
-            if (passwordEncoder.matches(password, user.get().getPassword())) {
-                return jwtUtil.generateToken(  user.get().getRole(),user.get().getEmail());
-
-            }
 
             throw new RuntimeException("Invalid email or password");
         } catch (Exception e) {
