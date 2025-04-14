@@ -1,5 +1,5 @@
 package com.taskmanagement.task.Service;
-
+import java.util.Base64;
 import com.taskmanagement.task.DTO.RemarkDTO;
 import com.taskmanagement.task.Entity.AssignmentEntity;
 import com.taskmanagement.task.Entity.AssignmentId;
@@ -7,6 +7,7 @@ import com.taskmanagement.task.Entity.RemarkEntity;
 import com.taskmanagement.task.Entity.Users;
 import com.taskmanagement.task.Repository.AssignmentRepository;
 import com.taskmanagement.task.Repository.RemarkRepository;
+import com.taskmanagement.task.Repository.TaskRepository;
 import com.taskmanagement.task.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,9 @@ public class RemarkService {
     @Autowired
     private UserRepository userRepository;
 
-    // Resolve userId from email
+    @Autowired
+    private TaskRepository taskRepository;
+
     private String getUserIdByEmail(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .map(Users::getUserId)
@@ -37,21 +40,31 @@ public class RemarkService {
 
     @Transactional(readOnly = true)
     public List<RemarkDTO> getRemarksForAssignment(UUID taskId, String email) {
-        String userId = getUserIdByEmail(email);
+        taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+        List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskId(taskId);
 
-        List<RemarkEntity> remarks = remarkRepository.findByAssignment_TaskIdAndAssignment_UserId(taskId, userId);
+        return remarks.stream().map(remark -> {
+            String userId = remark.getAssignment().getId().getUserId();
+            Users user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-        return remarks.stream().map(remark -> new RemarkDTO(
-                remark.getRemarkId(),
-                remark.getAssignment().getId().getTaskId(),
-                remark.getAssignment().getId().getUserId(),
-                remark.getComment(),
-                remark.getCreatedAt(),
-                remark.getDeletedAt()
-        )).collect(Collectors.toList());
+            String encodedPhoto = user.getPhoto() != null
+                    ? Base64.getEncoder().encodeToString(user.getPhoto())
+                    : null;
+
+            return new RemarkDTO(
+                    remark.getRemarkId(),
+                    remark.getAssignment().getId().getTaskId(),
+                    user.getUserId(),
+                    user.getName(),
+                    encodedPhoto,
+                    remark.getComment(),
+                    remark.getCreatedAt(),
+                    remark.getDeletedAt()
+            );
+        }).collect(Collectors.toList());
     }
 
     @Transactional
@@ -61,13 +74,22 @@ public class RemarkService {
         AssignmentEntity assignment = assignmentRepository.findById(new AssignmentId(taskId, userId))
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
         RemarkEntity remark = new RemarkEntity(assignment, comment);
         RemarkEntity savedRemark = remarkRepository.save(remark);
+
+        String encodedPhoto = user.getPhoto() != null
+                ? Base64.getEncoder().encodeToString(user.getPhoto())
+                : null;
 
         return new RemarkDTO(
                 savedRemark.getRemarkId(),
                 savedRemark.getAssignment().getId().getTaskId(),
-                savedRemark.getAssignment().getId().getUserId(),
+                user.getUserId(),
+                user.getName(),
+                encodedPhoto,
                 savedRemark.getComment(),
                 savedRemark.getCreatedAt(),
                 savedRemark.getDeletedAt()

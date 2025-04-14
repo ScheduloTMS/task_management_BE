@@ -34,6 +34,8 @@ public class AssignmentService {
     @Transactional
     public void saveAssignment(UUID taskId, String userId, byte[] fileUploads, String submissionStatus, String score) {
         AssignmentEntity assignment = new AssignmentEntity(taskId, userId, fileUploads, submissionStatus, score);
+        assignment.setsubmittedDate(LocalDateTime.now());
+
         TaskEntity taskEntity = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with ID: " + taskId));
 
@@ -111,17 +113,38 @@ public class AssignmentService {
     }
 
 
-
-
     @Transactional
-    public void assignStudents(UUID taskId, List<String> studentIds, String mentorId) throws AccessDeniedException {
+    public void assignStudents(UUID taskId, List<String> studentIds, String mentorEmail) throws AccessDeniedException {
+
+        Users mentor = userRepository.findByEmailAndDeletedAtIsNull(mentorEmail)
+                .orElseThrow(() -> new RuntimeException("Mentor not found or has been deleted with email: " + mentorEmail));
+
+        String mentorId = mentor.getUserId();
+
+
         TaskEntity task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with ID: " + taskId));
 
-
-        if (!task.getCreatedBy().equals(mentorId)) {
+        if (!task.getCreatedBy().equals(mentorEmail)) {
             throw new AccessDeniedException("You are not authorized to assign students to this task");
         }
+
+
+        AssignmentId mentorAssignmentId = new AssignmentId(taskId, mentorId);
+        if (!assignmentRepository.existsById(mentorAssignmentId)) {
+            AssignmentEntity mentorAssignment = new AssignmentEntity();
+            mentorAssignment.setId(mentorAssignmentId);
+            mentorAssignment.setTask(task);
+            mentorAssignment.setStudent(mentor);
+            mentorAssignment.setFileUploads(null);
+            mentorAssignment.setSubmissionStatus("N/A");
+            mentorAssignment.setScore(null);
+            mentorAssignment.setsubmittedDate(null);
+            mentorAssignment.setUpdatedAt(LocalDateTime.now());
+
+            assignmentRepository.save(mentorAssignment);
+        }
+
 
         for (String studentId : studentIds) {
             Users student = userRepository.findById(studentId)
@@ -136,18 +159,20 @@ public class AssignmentService {
 
             AssignmentEntity assignment = new AssignmentEntity();
             assignment.setId(assignmentId);
-            assignment.setTask(task); // ✅ Important fix
-            assignment.setStudent(student); // ✅ Important fix
+            assignment.setTask(task);
+            assignment.setStudent(student);
             assignment.setFileUploads(null);
             assignment.setSubmissionStatus("Not Submitted");
             assignment.setScore(null);
-            assignment.setSubmittedAt(null);
+            assignment.setsubmittedDate(LocalDateTime.now()); // Set the submission date
+
             assignment.setUpdatedAt(LocalDateTime.now());
 
             assignmentRepository.save(assignment);
         }
-
     }
+
+
 
     public List<AssignmentEntity> getAssignmentsByTaskId(UUID taskId) {
         return assignmentRepository.findByIdTaskId(taskId);
@@ -159,16 +184,16 @@ public class AssignmentService {
         return assignmentRepository.findByIdTaskIdAndIdUserId(taskId, userId).orElse(null);
     }
     public List<StudentDTO> getStudentsAssignedToTask(UUID taskId, String mentorEmail) {
-        // Optional: validate that the mentor has permission to view this task
+
 
         List<Users> assignedStudents = assignmentRepository.findStudentsByTaskId(taskId);
 
-        // Convert to DTOs
+
         return assignedStudents.stream()
                 .map(student -> new StudentDTO(
                         student.getUserId(),
                         student.getName(),
-                        student.getPhoto() // base64 or file path
+                        student.getPhoto()
 
                 ))
                 .collect(Collectors.toList());

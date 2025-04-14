@@ -3,7 +3,7 @@ package com.taskmanagement.task.DTO;
 public class StudentDTO {
     private String id;
     private String name;
-    private byte[] photo;  // Changed from Byte to byte[]
+    private byte[] photo;
 
     public StudentDTO(String id, String name, byte[] photo) {
         this.id = id;
@@ -11,7 +11,7 @@ public class StudentDTO {
         this.photo = photo;
     }
 
-    // Getters and Setters
+
     public String getId() {
         return id;
     }

@@ -142,9 +142,9 @@ public class TaskController {
                     .filter(auth -> auth.startsWith("ROLE_"))
                     .findFirst().orElse("ROLE_STUDENT");
 
-            // Fetch userId (e.g., ST001) instead of email
+
             Users user = userService.findByEmail(userDetails.getUsername());
-            String userId = user.getUserId(); // assuming getId() gives you "ST001"
+            String userId = user.getUserId();
             String status;
 
             if (role.equals("ROLE_MENTOR")) {
@@ -185,9 +185,7 @@ public class TaskController {
                 return ResponseEntity.ok(new ApiResponse("success", 200, "Task retrieved successfully", responseDTO));
 
             } else {
-                // For STUDENTS
 
-                // Use student ID instead of email
                 if (!assignmentService.isStudentAssignedToTask(taskId, userId)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(new ApiResponse("error", 403, "You are not assigned to this task", null));

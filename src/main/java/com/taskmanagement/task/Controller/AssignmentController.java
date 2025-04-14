@@ -169,8 +169,10 @@ public class AssignmentController {
                                 assignmentEntity.getId().getTaskId(),
                                 assignmentEntity.getId().getUserId(),
                                 assignmentEntity.getSubmissionStatus(),
+
                                 assignmentEntity.getScore(),
                                 assignmentEntity.getFileUploads() != null ? "File attached" : "No file"
+
                         )
                 ));
             } else {
@@ -210,4 +212,66 @@ public class AssignmentController {
                 students
         ));
     }
+
+
+    @GetMapping("/{taskId}/{studentId}")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse> getStudentAssignment(
+            @PathVariable UUID taskId,
+            @PathVariable String studentId) {
+
+        try {
+            Optional<AssignmentEntity> assignment = assignmentService.getAssignmentByUserAndTask(studentId, taskId);
+
+            if (assignment.isPresent()) {
+                AssignmentEntity assignmentEntity = assignment.get();
+
+                String fileStatus = "No file";
+                String fileName = null;
+                String downloadUrl = null;
+
+                if (assignmentEntity.getFileUploads() != null) {
+                    fileStatus = "File attached";
+                    fileName = "assignment_"  + studentId + ".pdf"; // or .docx etc.
+                    downloadUrl = "/api/files/download/" + taskId + "/" + studentId;
+                }
+
+                AssignmentResponse response = new AssignmentResponse(
+                        assignmentEntity.getId().getTaskId(),
+                        assignmentEntity.getId().getUserId(),
+                        assignmentEntity.getSubmissionStatus(),
+                        assignmentEntity.getScore(),
+                        assignmentEntity.getFileUploads() != null ? "File attached" : "No file",
+                        assignmentEntity.getFileUploads() != null ? "assignment_"  + studentId + ".pdf" : null,
+                        "/api/files/download/" + taskId + "/" + studentId,
+                        assignmentEntity.getSubmittedDate()  // Pass LocalDateTime here
+                );
+
+                return ResponseEntity.ok(new ApiResponse(
+                        "success",
+                        200,
+                        "Assignment retrieved successfully",
+                        response
+                ));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse(
+                                "error",
+                                404,
+                                "Assignment not found for student",
+                                null
+                        ));
+            }
+
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse(
+                            "error",
+                            404,
+                            ex.getMessage(),
+                            null
+                    ));
+        }
+    }
+
 }

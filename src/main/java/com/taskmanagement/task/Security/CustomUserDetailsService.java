@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        System.out.println("Attempting login with email: " + email); // Debug log
+        System.out.println("Attempting login with email: " + email);
 
         Users users = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> {
