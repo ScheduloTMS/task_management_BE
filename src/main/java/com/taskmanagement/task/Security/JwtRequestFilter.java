@@ -63,12 +63,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     response.getWriter().write("{\"status\":403,\"message\":\"Change your password to continue\",\"body\":null}");
                     return;
                 }
-                {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"status\":403,\"message\":\"Change your password to continue\",\"body\":null}");
-                    return;
-                }
+
             }
 
 

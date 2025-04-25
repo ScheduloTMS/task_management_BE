@@ -20,9 +20,10 @@ public class NoteController {
 
     @GetMapping
     public List<NoteDTO> getUserNotes(@AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        return noteService.getNotesByUser(userId);
+        String email = userDetails.getUsername();
+        return noteService.getNotesByUser(email);
     }
+
 
     @PostMapping
     public ResponseEntity<NoteDTO> createNote(

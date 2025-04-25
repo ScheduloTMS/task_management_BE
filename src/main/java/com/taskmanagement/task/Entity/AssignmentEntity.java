@@ -17,7 +17,7 @@ public class AssignmentEntity {
     @Lob
     private byte[] fileUploads;
     private String submissionStatus;
-    private LocalDateTime submittedAt;
+    private LocalDateTime submittedDate;
     private LocalDateTime updatedAt;
 
     @Column(nullable = true)
@@ -37,7 +37,7 @@ public class AssignmentEntity {
 
     @ManyToOne
     @MapsId("userId")
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private Users student;
 
 
@@ -47,7 +47,7 @@ public class AssignmentEntity {
         this.id = new AssignmentId(taskId, userId);
         this.fileUploads = fileUploads;
         this.submissionStatus = submissionStatus;
-        this.submittedAt = LocalDateTime.now();
+        this.submittedDate = LocalDateTime.now();
         this.score = score;
         this.updatedAt = null;
 
@@ -71,8 +71,8 @@ public class AssignmentEntity {
     public String getSubmissionStatus() { return submissionStatus; }
     public void setSubmissionStatus(String submissionStatus) { this.submissionStatus = submissionStatus; }
 
-    public LocalDateTime getSubmittedAt() { return submittedAt; }
-    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+    public LocalDateTime getSubmittedDate() { return submittedDate; }
+    public void setsubmittedDate(LocalDateTime submittedDate) { this.submittedDate = submittedDate; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

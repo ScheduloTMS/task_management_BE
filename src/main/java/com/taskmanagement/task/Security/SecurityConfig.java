@@ -65,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT,"/api/assignments").hasRole("MENTOR")
                         .requestMatchers(HttpMethod.GET,"/api/assignments/{taskId}").authenticated()
                         .requestMatchers("/api/assignments/{taskId}").authenticated()
+                        .requestMatchers(HttpMethod.GET,"/api/assignments/{taskId}/{studentId}").hasRole("MENTOR")
                         .requestMatchers("/api/remarks/tasks/{taskId}").authenticated()
                         .requestMatchers("/api/remarks/{remarkId}").authenticated()
                         .requestMatchers("/api/notes/**").authenticated()

@@ -17,4 +17,8 @@ public interface RemarkRepository extends JpaRepository<RemarkEntity, UUID> {
             @Param("taskId") UUID taskId,
             @Param("userId") String userId
     );
+
+    @Query("SELECT r FROM RemarkEntity r WHERE r.assignment.id.taskId = :taskId")
+    List<RemarkEntity> findByAssignment_TaskId(@Param("taskId") UUID taskId);
+
 }
